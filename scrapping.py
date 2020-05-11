@@ -1,5 +1,6 @@
 import requests
 import re
+import json
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -83,13 +84,38 @@ def obtenerDetalleRegistro(htmlRegistro):
 # Devuelve un listado de objetos de detalle (latitud y longitud)
 def obtenerUbicacion(registrosJS):
     
+    
+
     for registro in  registrosJS:
         strContenido = str(registro.prettify())
         match = re.search("window.__APP", strContenido)
 
         if(match):
-            print("Se encontro script para ubicacion.")
             
+            # Limpiamos el contenido de la etiqueta script que posee un JSON con la informacion del apartamento
+            strContenido = strContenido.replace('<script type="text/javascript">', '').replace('</script>', '').replace('window.__APP =','').replace('props:', '\"props\":').replace('};', '}')
+            idxInicial = strContenido.index('"elements":')
+            idxFinal = strContenido.index('"collections":')
+            strContenido = "{" + strContenido[idxInicial:(idxFinal-1)] + "}"
+            jsonContenido = json.loads(strContenido)
+            jsonLocations = jsonContenido['elements'][list(jsonContenido['elements'].keys())[0]]['locations']
+
+            listaDetalle = list()
+
+            if(len(jsonLocations) > 0):
+                # Guardamos la latitud
+                objDetalleApartamento = DetalleApartamento('Latitude', jsonLocations[0]['lat'])
+                listaDetalle.append(objDetalleApartamento)
+
+                # Guardamos la longitud
+                objDetalleApartamento = DetalleApartamento('Longitude', jsonLocations[0]['lon'])
+                listaDetalle.append(objDetalleApartamento)
+
+            # Guardamos el objeto JSON
+            objDetalleApartamento = DetalleApartamento('JSON', json.dumps(jsonContenido))
+            listaDetalle.append(objDetalleApartamento)
+
+            return listaDetalle
     
     return None
 
@@ -132,9 +158,14 @@ def obtenerInformacionRegistro(linkRegistro):
         # Se obtiene la ubicacion.
         registrosJS = soup.find_all('script', {'type': 'text/javascript'})
         if(registrosJS is not None and len(registrosJS) > 0):
-            obtenerUbicacion(registrosJS)
+            listaUbicacion = obtenerUbicacion(registrosJS)
+
+            if (listaUbicacion is not None):
+                listaDetalle.append(listaUbicacion)
+            else:
+                print("No se ubtuvo detalles de ubicacion.")
         else:
-            print('No se encontro ubicacion para el registro')
+            print('No se encontro ubicacion para el registro.')
 
         return listaDetalle
         
@@ -228,7 +259,7 @@ def obtenerFuentePagina(pTimeout, pNumeroClics):
 def main():
     intNumeroClics = 5
     intTimeout = 15
-    intCantidadLimiteRegistros = 5
+    intCantidadLimiteRegistros = 25
 
     # Obtenemos el html de la pagina web
     strResultado = obtenerFuentePagina(intTimeout, intNumeroClics)
