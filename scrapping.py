@@ -8,6 +8,7 @@ from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
+#from DataBaseOp import DataBaseOp
 
 # Texto del boton de carga
 strTextoBoton = "CARGAR MÁS"
@@ -36,8 +37,9 @@ class DetalleApartamento:
 # Clase de registro apartamento para generar objetos que se utilizaran para almacenar 
 # en base de datos.
 class RegistroApartamento:
-    def __init__(self, id, atributos):
+    def __init__(self, id, linkPagina, atributos):
         self.id = id
+        self.linkPagina
         self.atributos = atributos
 
 
@@ -161,9 +163,11 @@ def obtenerInformacionRegistro(linkRegistro):
             listaUbicacion = obtenerUbicacion(registrosJS)
 
             if (listaUbicacion is not None):
-                listaDetalle.append(listaUbicacion)
+                listaDetalle = listaDetalle + listaUbicacion
             else:
                 print("No se ubtuvo detalles de ubicacion.")
+
+            
         else:
             print('No se encontro ubicacion para el registro.')
 
@@ -206,7 +210,7 @@ def obtenerRegistros(intCantidadLimite, registros):
 
             # Verficamos que existan detalles del registro para crear un nuevo objeto de registro de apartamento.
             if(listaDetalle is not None and len(listaDetalle) > 0):
-                objRegistroApt = RegistroApartamento(int(strID), listaDetalle)
+                objRegistroApt = RegistroApartamento(int(strID), nuevoLink, listaDetalle)
                 listaRegistrosApt.append(objRegistroApt)
 
     # Devolvemos la lista con todos los apartamentos registrados
@@ -240,7 +244,6 @@ def obtenerFuentePagina(pTimeout, pNumeroClics):
     if(pNumeroClics > 0):
         for i in range(0, pNumeroClics):
             btnWebElement.click()
-            print("Clic: #" + str(i + 1))
     
     # Obtiene el codigo fuente de la pagina
     strPageSource = driver.page_source
@@ -280,6 +283,7 @@ def main():
         
         if(len(registros) > 0):
             print("La cantidad de registros obtenidos: " + str(len(registros)))
+            #DataBaseOp.RegistrarDatos(registros)
         else:
             print("No se obtuvieron registros")
     else:
