@@ -12,10 +12,10 @@ class DataBaseOp:
 
         strQueryEncabezado = "INSERT INTO public.EncabezadoRegistros(IdRegistro, LinkPagina) VALUES (%s, %s) RETURNING CodigoEncabezado"
 
-        strQueryDetalle = "INSERT INTO public.DetalleRegistros(CodigoEncabezado, NombreCampo, ValorCampo) VALUES (%s, %s, %s)"
+        strQueryDetalle = "INSERT INTO public.DetalleRegistros(CodigoEncabezado, NombreCampo, ValorCampo, ValorJSON) VALUES (%s, %s, %s, %s)"
 
         # Recorremos cada registro
-        for(registro in listaRegistros):
+        for registro in listaRegistros:
 
             # Obtenemos la conexion a BD
             conn = None
@@ -44,9 +44,15 @@ class DataBaseOp:
                 
                 strCampo = registroDetalle.campo
                 strValor = registroDetalle.valor
+                strValorJSON = None
+
+                # Si el campo es JSON lo guardamos en otra columna
+                if(strCampo == "JSON"):
+                    strValorJSON = strValor
+                    strValor = None
 
                 # Ejecutamos la insercion de registro detalle
-                cur.execute(strQueryDetalle, (intCodigoEncabezado, strCampo, strValor))
+                cur.execute(strQueryDetalle, (intCodigoEncabezado, strCampo, strValor, strValorJSON))
             
             # Confirmamos la insercion
             conn.commit()

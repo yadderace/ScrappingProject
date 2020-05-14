@@ -1,6 +1,7 @@
 import requests
 import re
 import json
+import math
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -8,7 +9,7 @@ from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
-#from DataBaseOp import DataBaseOp
+from DataBaseOp import DataBaseOp
 
 # Texto del boton de carga
 strTextoBoton = "CARGAR MÁS"
@@ -39,7 +40,7 @@ class DetalleApartamento:
 class RegistroApartamento:
     def __init__(self, id, linkPagina, atributos):
         self.id = id
-        self.linkPagina
+        self.linkPagina = linkPagina
         self.atributos = atributos
 
 
@@ -260,9 +261,10 @@ def obtenerFuentePagina(pTimeout, pNumeroClics):
 # MAIN
 
 def main():
-    intNumeroClics = 5
+    intNumeroClics = 10
     intTimeout = 15
-    intCantidadLimiteRegistros = 25
+    intCantidadLimiteRegistros = 100
+    intRegistosPorPagina = 10
 
     # Obtenemos el html de la pagina web
     strResultado = obtenerFuentePagina(intTimeout, intNumeroClics)
@@ -279,13 +281,35 @@ def main():
     registros = soup.find_all('li', {'class' : 'EIR5N'})
     
     if registros is not None:
-        registros = obtenerRegistros(intCantidadLimiteRegistros, registros)
-        
-        if(len(registros) > 0):
-            print("La cantidad de registros obtenidos: " + str(len(registros)))
-            #DataBaseOp.RegistrarDatos(registros)
-        else:
-            print("No se obtuvieron registros")
+
+        # Recortamos los registros a la cantidad limite
+        if(len(registros) > intCantidadLimiteRegistros):
+            registros = registros[0:(intCantidadLimiteRegistros - 1)]
+
+        # Calculamos la cantidad de paginas a utilizar
+        intPaginas = math.ceil(len(registros) / intRegistosPorPagina)
+        for pagina in range(1, intPaginas):
+            
+            print("Pagina #" + str(pagina))
+
+            # Se obtienen los limites para obtener los subregistros de pagina
+            intLimiteInicial = (pagina - 1) * intRegistosPorPagina
+            intLimiteFinal = intLimiteInicial + intRegistosPorPagina
+            if(intLimiteFinal > len(registros) - 1):
+                intLimiteFinal = len(registros)
+            
+            # Se obtienen los subregistros y se procesan las consultas
+            listaSubRegistros = registros[intLimiteInicial:intLimiteFinal]
+            listaRegistrosEncontrados = obtenerRegistros(intCantidadLimiteRegistros, listaSubRegistros)
+
+            # Se verifica si se obtuvieron registros de respuesta para procesarlos a base de datos
+            if(len(listaRegistrosEncontrados) > 0):
+                print("La cantidad de registros obtenidos: " + str(len(listaRegistrosEncontrados)))
+                DataBaseOp.RegistrarDatos(listaRegistrosEncontrados)
+
+            else:
+                print("No se obtuvieron registros")
+
     else:
         print("No se encontraron registros de apartamentos para la clase mencionada (main)")
 
