@@ -131,8 +131,18 @@ def obtenerInformacionRegistro(linkRegistro):
     
     # Haciendo consulta GET para el link
     urlPeticion = linkRegistro
-    r = requests.get(urlPeticion, headers = headers)
+    s = requests.Session()
+    s.headers = headers
 
+    # Se intenta realizar peticion por Get
+    r = None
+    try:
+        r = s.get(urlPeticion)
+        
+    except requests.exceptions.ConnectionError as e:
+        print("Error al realizar peticion Get")
+        return None
+    
     if r.status_code == 200:
         # Creacion de objeto Soup
         html = r.text
