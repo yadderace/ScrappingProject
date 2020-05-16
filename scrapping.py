@@ -271,10 +271,11 @@ def obtenerFuentePagina(pTimeout, pNumeroClics):
 # MAIN
 
 def main():
-    intNumeroClics = 10
+    intNumeroClics = 20
     intTimeout = 15
     intCantidadLimiteRegistros = 100
     intRegistosPorPagina = 10
+    intRegistroMin = 60
 
     # Obtenemos el html de la pagina web
     strResultado = obtenerFuentePagina(intTimeout, intNumeroClics)
@@ -291,6 +292,10 @@ def main():
     registros = soup.find_all('li', {'class' : 'EIR5N'})
     
     if registros is not None:
+
+        # Establecemos el registro minimo
+        if(intRegistroMin < len(registros) - 1):
+            registros = registros[intRegistroMin:len(registros)]
 
         # Recortamos los registros a la cantidad limite
         if(len(registros) > intCantidadLimiteRegistros):
