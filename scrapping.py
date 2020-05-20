@@ -271,11 +271,11 @@ def obtenerFuentePagina(pTimeout, pNumeroClics):
 # MAIN
 
 def main():
-    intNumeroClics = 20
+    intNumeroClics = 30
     intTimeout = 15
-    intCantidadLimiteRegistros = 100
+    intCantidadLimiteRegistros = 250
     intRegistosPorPagina = 10
-    intRegistroMin = 60
+    intRegistroMin = 0
 
     # Obtenemos el html de la pagina web
     strResultado = obtenerFuentePagina(intTimeout, intNumeroClics)
