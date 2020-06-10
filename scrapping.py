@@ -17,7 +17,9 @@ strTextoBoton = "CARGAR MÁS"
 # Url de pagina web
 urlBase = "https://www.olx.com.gt"
 # URL donde se obtendra el listado de apartamentos
-urlApartamentos = "/ciudad-de-guatemala_g4168811/q-apartamentos"
+#urlApartamentos = "/ciudad-de-guatemala_g4168811/q-apartamentos"
+#urlApartamentos = "/items/q-apartamentos-villa-nueva"
+urlApartamentos = "/items/q-apartamentos-zona-12"
 urlPeticion = urlBase + urlApartamentos
 
 # Creacion de header para peticion
@@ -271,9 +273,9 @@ def obtenerFuentePagina(pTimeout, pNumeroClics):
 # MAIN
 
 def main():
-    intNumeroClics = 30
-    intTimeout = 15
-    intCantidadLimiteRegistros = 250
+    intNumeroClics = 15
+    intTimeout = 30
+    intCantidadLimiteRegistros = 500
     intRegistosPorPagina = 10
     intRegistroMin = 0
 
