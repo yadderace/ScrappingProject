@@ -10,7 +10,9 @@ from sqlalchemy import create_engine
 def lecturaDataScrapping():
     engine = create_engine('postgresql://postgres:150592@localhost:5432/DBApartamentos')
 
-    dfEncabezadoRegistros = pd.read_sql_query('select * from encabezadoregistros where fechalimpieza is null',con=engine)
+    dfEncabezadoRegistros = pd.read_sql_query('select codigoencabezado, idregistro, linkpagina, fecharegistro ' + 
+                                                'from encabezadoregistros where fechalimpieza is null',con=engine)
+
     dfDetalleRegistros = pd.read_sql_query('select * from detalleregistros ' +
                                                     ' where codigoencabezado in (' + 
                                                         ' select distinct codigoencabezado ' +
@@ -463,21 +465,32 @@ def registarNuevaLimpieza():
 
     # Conexion a base de datos
     engine = create_engine('postgresql://postgres:150592@localhost:5432/DBApartamentos')
+    
+    con = engine.connect()
 
     # Ejecucion de query
-    idlimpiezalog = engine.execute(strQuery)
+    idlimpiezalog = con.execute(strQuery)
 
-    return(idlimpiezalog)
+    con.close()
 
-# Registra los campos del dataframe con su respectivo idloglimpieza en la tabla limpiezadetalle
-def registrarCampos(dfCampos, idloglimpieza):
-
+    return(idlimpiezalog.fetchone()[0])
 
 
 # Proceso que se encarga de registrar los datos de limpieza en BD
-def registrarTransformacion(dfTransformacion):
-    print("Hola")
+def registrarTransformacion(dfTransformacion, dfCampos, idlimpiezalog):
     
+    # Conexion a base de datos
+    engine = create_engine('postgresql://postgres:150592@localhost:5432/DBApartamentos')
+    
+    dfCampos['idlimpiezalog'] = idlimpiezalog
+
+    dfCampos.to_sql('limpiezadetalle', index = False, if_exists = 'append', con = engine)
+
+    dfTemp = engine.execute('SELECT * FROM limpiezadetalle').fetchall()
+
+    print(dfTemp)
+
+    return True
 
 
 # Proceso principal para realizar la transformacion de datos
@@ -496,11 +509,18 @@ def mainProcess():
         print("La data de transformacion no tiene registros")
 
     # Creamos un registro para nueva limpieza y obtenemos el codigo con que registro esa data.
-    idLogLimpieza = registarNuevaLimpieza()
+    idLimpiezaLog = registarNuevaLimpieza()
 
+    if(idLimpiezaLog <= 0):
+        print("No se pudo obtener id para log de limpieza")
 
-    print(dfTransformacion)
+    
+    # Obtenemos el dataframe de campos
+    dfCamposData = transformarCampos(dfTransformacion)
 
+    # Se registra la transformacion de los datos
+    if(registrarTransformacion(dfTransformacion, dfCamposData, idLimpiezaLog) == True):
+        print("Registro de transformacion completada")
 
 mainProcess()
 
