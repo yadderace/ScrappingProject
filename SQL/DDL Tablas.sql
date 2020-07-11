@@ -54,11 +54,16 @@ CREATE TABLE public.limpiezadata
     idlimpiezadata bigint NOT NULL GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 9223372036854775807 CACHE 1 ),
 	nombrecampo character varying (50) NOT NULL,
 	idlimpiezalog bigint NOT NULL,
-    valordata character varying (50) NOT NULL,
+    codigoencabezado bigint NOT NULL,
+    valordata character varying (1000) NOT NULL,
 	fecharegistro timestamp without time zone DEFAULT now(),
 	CONSTRAINT limpiezadata_pkey PRIMARY KEY (idlimpiezadata),
 	CONSTRAINT limpiezadata_idlimpiezadetalle_fkey FOREIGN KEY (idlimpiezalog, nombrecampo)
         REFERENCES public.limpiezadetalle (idlimpiezalog, nombrecampo) MATCH SIMPLE
+        ON UPDATE NO ACTION
+        ON DELETE NO ACTION,
+    CONSTRAINT limpiezadetalle_codigoencabezado_fkey FOREIGN KEY (codigoencabezado)
+        REFERENCES public.encabezadoregistros(codigoencabezado) MATCH SIMPLE
         ON UPDATE NO ACTION
         ON DELETE NO ACTION
 );
