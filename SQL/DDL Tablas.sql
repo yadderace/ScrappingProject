@@ -55,7 +55,7 @@ CREATE TABLE public.limpiezadata
 	nombrecampo character varying (50) NOT NULL,
 	idlimpiezalog bigint NOT NULL,
     codigoencabezado bigint NOT NULL,
-    valordata character varying (1000) NOT NULL,
+    valordata text,
 	fecharegistro timestamp without time zone DEFAULT now(),
 	CONSTRAINT limpiezadata_pkey PRIMARY KEY (idlimpiezadata),
 	CONSTRAINT limpiezadata_idlimpiezadetalle_fkey FOREIGN KEY (idlimpiezalog, nombrecampo)
