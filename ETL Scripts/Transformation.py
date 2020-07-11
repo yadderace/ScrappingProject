@@ -503,8 +503,23 @@ def registrarTransformacion(dfTransformacion, idlimpiezalog):
     # Registrando los datos en limpiezadata
     dfLimpiezaData.to_sql('limpiezadata', index = False, if_exists = 'append', con = engine)
 
+    # Actualizando la tabla principal de limpieza para registros
+    strQuery = "UPDATE limpiezalog SET cantidadregistros = " + str(len(dfTransformacion.index)) + " where idlimpiezalog = " + str(idlimpiezalog)
+    engine.execute(strQuery)
+
     return True
 
+# Se encarga de ejecutar el script para actualizar los registros que no tienen fecha de limpieza
+def actualizarRegistrosLimpios():
+    
+    # Conexion a base de datos
+    engine = create_engine('postgresql://postgres:150592@localhost:5432/DBApartamentos')
+
+    # Ejecucion de actualizacion
+    strQuery = "UPDATE encabezadoregistros SET fechalimpieza = now() where fechalimpieza is null"
+    engine.execute(strQuery)
+
+    return True
 
 # Proceso principal para realizar la transformacion de datos
 def mainProcess():
@@ -529,7 +544,15 @@ def mainProcess():
 
     # Se registra la transformacion de los datos
     if(registrarTransformacion(dfTransformacion, idLimpiezaLog) == True):
+        
+        # Actualizamos aquellos registros que ya fueron limpiados
+        actualizarRegistrosLimpios()
+
         print("Registro de transformacion completada")
+        
+
+    else:
+        print("No se completo el registro de transformacion")
 
 mainProcess()
 
