@@ -10,8 +10,13 @@ from sqlalchemy import create_engine
 def lecturaDataScrapping():
     engine = create_engine('postgresql://postgres:150592@localhost:5432/DBApartamentos')
 
-    dfEncabezadoRegistros = pd.read_sql_query('select * from encabezadoregistros ezadoregistros',con=engine)
-    dfDetalleRegistros = pd.read_sql_query('select * from detalleregistros',con=engine)
+    dfEncabezadoRegistros = pd.read_sql_query('select * from encabezadoregistros where fechalimpieza is null',con=engine)
+    dfDetalleRegistros = pd.read_sql_query('select * from detalleregistros ' +
+                                                    ' where codigoencabezado in (' + 
+                                                        ' select distinct codigoencabezado ' +
+                                                        ' from encabezadoregistros' +
+                                                        ' where fechalimpieza is null'
+                                                    ')',con=engine)
 
     return (dfEncabezadoRegistros, dfDetalleRegistros)
 
@@ -350,64 +355,152 @@ def mergeDataSets(dfEnc, dfDet, strCampo, strHow):
     dfFinal = dfEnc.merge(dfDet, on = strCampo, how = strHow)
     return (dfFinal)
 
+# Proceso que se encarga de transformar cada uno de los campos de los datos de scrapping
+def transformarData(dfEnc, dfDet):
+    # Obtenemos registros que tienen atributo administracion
+    dfDetAdmin = limpiarCampoAdmnistracion(dfDet)
+    dfFinal = mergeDataSets(dfEnc, dfDetAdmin, 'codigoencabezado', 'left')
 
-# Obteniendo encabezado y detalle
-dfEnc, dfDet = lecturaDataScrapping()
+    # Obtenemos registros que tienen atributo administracion
+    dfDetAmueb = limpiarCampoAmueblado(dfDet)
+    dfFinal = mergeDataSets(dfFinal, dfDetAmueb, 'codigoencabezado', 'left')
 
-# Obtenemos registros que tienen atributo administracion
-dfDetAdmin = limpiarCampoAdmnistracion(dfDet)
-dfFinal = mergeDataSets(dfEnc, dfDetAdmin, 'codigoencabezado', 'left')
+    # Obtenemos registros que tienen atributo antiguedad
+    dfDetAnt = limpiarCampoAntiguedad(dfDet)
+    dfFinal = mergeDataSets(dfFinal, dfDetAnt, 'codigoencabezado', 'left')
 
-# Obtenemos registros que tienen atributo administracion
-dfDetAmueb = limpiarCampoAmueblado(dfDet)
-dfFinal = mergeDataSets(dfFinal, dfDetAmueb, 'codigoencabezado', 'left')
+    # Obtenemos registros que tienen atributo antiguedad
+    dfDetBanos = limpiarCampoBanos(dfDet)
+    dfFinal = mergeDataSets(dfFinal, dfDetBanos, 'codigoencabezado', 'left')
 
-# Obtenemos registros que tienen atributo antiguedad
-dfDetAnt = limpiarCampoAntiguedad(dfDet)
-dfFinal = mergeDataSets(dfFinal, dfDetAnt, 'codigoencabezado', 'left')
+    # Obtenemos registros que tienen atributo habitaciones
+    dfDetHabit = limpiarCampoHabitaciones(dfDet)
+    dfFinal = mergeDataSets(dfFinal, dfDetHabit, 'codigoencabezado', 'left')
 
-# Obtenemos registros que tienen atributo antiguedad
-dfDetBanos = limpiarCampoBanos(dfDet)
-dfFinal = mergeDataSets(dfFinal, dfDetBanos, 'codigoencabezado', 'left')
+    # Obtenemos registros que tienen atributo latitud
+    dfDetLat = limpiarCampoLatitud(dfDet)
+    dfFinal = mergeDataSets(dfFinal, dfDetLat, 'codigoencabezado', 'left')
 
-# Obtenemos registros que tienen atributo habitaciones
-dfDetHabit = limpiarCampoHabitaciones(dfDet)
-dfFinal = mergeDataSets(dfFinal, dfDetHabit, 'codigoencabezado', 'left')
+    # Obtenemos registros que tienen atributo longitud
+    dfDetLon = limpiarCampoLongitud(dfDet)
+    dfFinal = mergeDataSets(dfFinal, dfDetLon, 'codigoencabezado', 'left')
 
-# Obtenemos registros que tienen atributo latitud
-dfDetLat = limpiarCampoLatitud(dfDet)
-dfFinal = mergeDataSets(dfFinal, dfDetLat, 'codigoencabezado', 'left')
+    # Obtenemos registros que tienen atributo espacio
+    dfDetEspacio = limpiarCampoEspacioTotal(dfDet)
+    dfFinal = mergeDataSets(dfFinal, dfDetEspacio, 'codigoencabezado', 'left')
 
-# Obtenemos registros que tienen atributo longitud
-dfDetLon = limpiarCampoLongitud(dfDet)
-dfFinal = mergeDataSets(dfFinal, dfDetLon, 'codigoencabezado', 'left')
+    # Obtenemos registros que tienen atributo parqueadero
+    dfDetParq = limpiarCampoParqueo(dfDet)
+    dfFinal = mergeDataSets(dfFinal, dfDetParq, 'codigoencabezado', 'left')
 
-# Obtenemos registros que tienen atributo espacio
-dfDetEspacio = limpiarCampoEspacioTotal(dfDet)
-dfFinal = mergeDataSets(dfFinal, dfDetEspacio, 'codigoencabezado', 'left')
+    # Obtenemos registros que tienen atributo piso
+    dfDetPiso = limpiarCampoPiso(dfDet)
+    dfFinal = mergeDataSets(dfFinal, dfDetPiso, 'codigoencabezado', 'left')
 
-# Obtenemos registros que tienen atributo parqueadero
-dfDetParq = limpiarCampoParqueo(dfDet)
-dfFinal = mergeDataSets(dfFinal, dfDetParq, 'codigoencabezado', 'left')
+    # Obtenemos registros que tienen atributo precio
+    dfDetPrecio = limpiarCampoPrecio(dfDet)
+    dfFinal = mergeDataSets(dfFinal, dfDetPrecio, 'codigoencabezado', 'left')
 
-# Obtenemos registros que tienen atributo piso
-dfDetPiso = limpiarCampoPiso(dfDet)
-dfFinal = mergeDataSets(dfFinal, dfDetPiso, 'codigoencabezado', 'left')
+    # Obtenemos registros que tienen atributo tipo (casa, apto)
+    dfDetTipo = limpiarCampoTipo(dfDet)
+    dfFinal = mergeDataSets(dfFinal, dfDetTipo, 'codigoencabezado', 'left')
 
-# Obtenemos registros que tienen atributo precio
-dfDetPrecio = limpiarCampoPrecio(dfDet)
-dfFinal = mergeDataSets(dfFinal, dfDetPrecio, 'codigoencabezado', 'left')
+    # Obtenemos registros que tienen atributo tipo vendedor
+    dfDetTipoVen = limpiarCampoTipoVendedor(dfDet)
+    dfFinal = mergeDataSets(dfFinal, dfDetTipoVen, 'codigoencabezado', 'left')
 
-# Obtenemos registros que tienen atributo tipo (casa, apto)
-dfDetTipo = limpiarCampoTipo(dfDet)
-dfFinal = mergeDataSets(dfFinal, dfDetTipo, 'codigoencabezado', 'left')
+    # Obtenemos registros que tienen atributo tipo vendedor
+    dfDetJSON = limpiarCampoJSON(dfDet)
+    dfFinal = mergeDataSets(dfFinal, dfDetJSON, 'codigoencabezado', 'left')
 
-# Obtenemos registros que tienen atributo tipo vendedor
-dfDetTipoVen = limpiarCampoTipoVendedor(dfDet)
-dfFinal = mergeDataSets(dfFinal, dfDetTipoVen, 'codigoencabezado', 'left')
+    return (dfFinal)
 
-# Obtenemos registros que tienen atributo tipo vendedor
-dfDetJSON = limpiarCampoJSON(dfDet)
-dfFinal = mergeDataSets(dfFinal, dfDetJSON, 'codigoencabezado', 'left')
+# Se encarga de generar un dataset de campos del data set de datos transformados
+def transformarCampos(dfTransformacion):
+    
+    dfTemp = dfTransformacion.dtypes.to_frame(name = "tipodatacampo")
+    dfTemp.reset_index(level=0, inplace=True)
+    
+    # Renombramos la columna index con nombrecampo
+    dfTemp.rename(columns={'index': 'nombrecampo'}, inplace = True)
 
-print(dfFinal)
+    # Establecemos el tipo de dato a utilizar para cada campo
+    dfTemp['tipodatacampo'] = dfTemp.nombrecampo.map(
+        {'codigoencabezado': 'int64',
+        'idregistro': 'int64',
+        'linkpagina': 'string',
+        'fecharegistro': 'date',
+        'administracion': 'float64',
+        'amueblado': 'int64',
+        'antiguedad': 'int64',
+        'banos': 'int64',
+        'habitaciones': 'int64',
+        'estudio': 'int64',
+        'latitud': 'float64',
+        'longitud': 'float64',
+        'espacio_m2': 'float64',
+        'parqueo': 'int64',
+        'piso': 'int64',
+        'precio': 'float64',
+        'moneda': 'string',
+        'tipo': 'int64',
+        'tipo_vendedor': 'int64',
+        'favoritos': 'int64',
+        'titulo': 'string',
+        'fecha_creacion': 'string',
+        'valido_hasta': 'string',
+        'descripcion': 'string',
+        'partner_code': 'string',
+        'user_id': 'string'
+        })
+
+    return (dfTemp)
+
+# Inserta un nuevo registro en la tabla limpiezalog
+def registarNuevaLimpieza():
+    # Query para insercion de nuevo registro
+    strQuery = "INSERT INTO limpiezalog(CantidadRegistros) VALUES (0) RETURNING idlimpiezalog"
+
+    # Conexion a base de datos
+    engine = create_engine('postgresql://postgres:150592@localhost:5432/DBApartamentos')
+
+    # Ejecucion de query
+    idlimpiezalog = engine.execute(strQuery)
+
+    return(idlimpiezalog)
+
+# Registra los campos del dataframe con su respectivo idloglimpieza en la tabla limpiezadetalle
+def registrarCampos(dfCampos, idloglimpieza):
+
+
+
+# Proceso que se encarga de registrar los datos de limpieza en BD
+def registrarTransformacion(dfTransformacion):
+    print("Hola")
+    
+
+
+# Proceso principal para realizar la transformacion de datos
+def mainProcess():
+    # Obteniendo encabezado y detalle
+    dfEnc, dfDet = lecturaDataScrapping()
+
+    if(len(dfEnc.index) == 0  | len(dfDet.index) == 0):
+        print("La data de scrapping no tiene registros")
+        exit()
+
+    # Proceso que se encarga de transformar los campos
+    dfTransformacion = transformarData(dfEnc, dfDet)
+
+    if(len(dfTransformacion.index) == 0):
+        print("La data de transformacion no tiene registros")
+
+    # Creamos un registro para nueva limpieza y obtenemos el codigo con que registro esa data.
+    idLogLimpieza = registarNuevaLimpieza()
+
+
+    print(dfTransformacion)
+
+
+mainProcess()
+
