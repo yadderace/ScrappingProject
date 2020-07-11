@@ -477,18 +477,31 @@ def registarNuevaLimpieza():
 
 
 # Proceso que se encarga de registrar los datos de limpieza en BD
-def registrarTransformacion(dfTransformacion, dfCampos, idlimpiezalog):
+def registrarTransformacion(dfTransformacion, idlimpiezalog):
     
     # Conexion a base de datos
     engine = create_engine('postgresql://postgres:150592@localhost:5432/DBApartamentos')
     
+    # Eliminamos registros duplicados para el mismo idregistro para la misma fecha de registro.
+    dfTransformacion = dfTransformacion.drop_duplicates(subset = ['idregistro', 'fecharegistro'], keep = 'last')
+
+    # Obtenemos el dataframe de campos
+    dfCampos = transformarCampos(dfTransformacion)
+
+    # Agregando el campo de idlimpiezalog
     dfCampos['idlimpiezalog'] = idlimpiezalog
 
+    # Registrando los datos en limpiezadetalle
     dfCampos.to_sql('limpiezadetalle', index = False, if_exists = 'append', con = engine)
 
-    dfTemp = engine.execute('SELECT * FROM limpiezadetalle').fetchall()
+    # Trasladando columnas a registros
+    dfLimpiezaData = dfTransformacion.melt(id_vars = 'codigoencabezado', var_name = 'nombrecampo', value_name = 'valordata')
 
-    print(dfTemp)
+    # Agregando la nueva columna de idlimpiezalog
+    dfLimpiezaData['idlimpiezalog'] = idlimpiezalog
+
+    # Registrando los datos en limpiezadata
+    dfLimpiezaData.to_sql('limpiezadata', index = False, if_exists = 'append', con = engine)
 
     return True
 
@@ -514,12 +527,8 @@ def mainProcess():
     if(idLimpiezaLog <= 0):
         print("No se pudo obtener id para log de limpieza")
 
-    
-    # Obtenemos el dataframe de campos
-    dfCamposData = transformarCampos(dfTransformacion)
-
     # Se registra la transformacion de los datos
-    if(registrarTransformacion(dfTransformacion, dfCamposData, idLimpiezaLog) == True):
+    if(registrarTransformacion(dfTransformacion, idLimpiezaLog) == True):
         print("Registro de transformacion completada")
 
 mainProcess()
