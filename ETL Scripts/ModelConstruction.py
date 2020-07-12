@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from datetime import date, timedelta
 from sqlalchemy import create_engine
 
@@ -33,6 +34,17 @@ def obtenerRegistrosUnicos(dfSetDatos):
     return(dfAnalisisSet)
 
 
+# Calcula el precio real en quetzales para cada registro del set de datos
+def obtenerPrecioReal(dfSetDatos):
+    # Factor de conversion
+    cambio_moneda = 7.69
+
+    # Creacion de nueva columna
+    dfSetDatos['precioreal'] = np.where(dfSetDatos['moneda'] == 'US$', dfSetDatos['precio'] * cambio_moneda, 
+                                            dfSetDatos['precio'])
+    return (dfSetDatos)
+
+
 dateFechaActual = date.today()
 dateFechaAnterior = dateFechaActual - timedelta(days= 45)
 
@@ -44,3 +56,6 @@ dfSetLimpio = obtenerRegistrosUnicos(dfSetLimpio)
 
 print(len(dfSetLimpio.index))
 
+dfSetLimpio = obtenerPrecioReal(dfSetLimpio)
+
+print(dfSetLimpio)
