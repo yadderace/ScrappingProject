@@ -2,6 +2,11 @@ import pandas as pd
 import numpy as np
 from datetime import date, timedelta
 from sqlalchemy import create_engine
+from sklearn.cluster import KMeans
+#from sklearn.model_selection import train_test_split
+#from sklearn.linear_model import LinearRegression
+#from sklearn.ensemble import RandomForestRegressor
+#from sklearn.metrics import mean_squared_error, r2_score
 
 
 # Lectura de los datos limpios en BD
@@ -69,6 +74,36 @@ def filtrarRegistros(dfSetDatos):
 
     return(dfSetDatos)
 
+# Se genera un modelo kmeans para la ubicacion de latitud y longitud
+def generarModeloUbicacion(dfSetDatos):
+    intKClusters = 13
+
+    # Se obtienen los valores que se utilizaran para la construccion de modelo KMeans
+    npUbicaciones = np.array(list(zip(dfSetDatos['longitud'], 
+                                    dfSetDatos['latitud']))).reshape(len(dfSetDatos['longitud']), 2)
+
+    # Construccion del modelo
+    kmeanModel = KMeans(n_clusters = intKClusters, max_iter = 2000).fit(npUbicaciones)
+
+    # Asignacion de clusters a registros
+    dfSetDatos['ubicacion'] = ["U" + str(ubicacion) for ubicacion in kmeanModel.labels_]
+
+    # Calculo de frecuencia para ubicacion
+    srFreqUbicacion = pd.Series(dfSetDatos['ubicacion']).value_counts()
+
+    # Eliminando elementos que tienen baja frecuencia para ubicacion
+    intNumeroPivote = 10
+    idxEliminar = srFreqUbicacion[srFreqUbicacion <= intNumeroPivote].index
+    dfSetDatos = dfSetDatos[~dfSetDatos.ubicacion.isin(idxEliminar)]
+
+    # Creamos el dataframe con el cual vamos a mapear los valores
+    dfMapeo = pd.DataFrame({'ubicacion': dfSetDatos.ubicacion.unique()})
+    dfMapeo['nuevaubicacion'] = ["U" + str(ubicacion) for ubicacion in range(1, len(dfMapeo) + 1)]
+
+    # Colocamos los nuevos valores de ubicacion
+    dfSetDatos['ubicacion'] = dfSetDatos.join(dfMapeo.set_index('ubicacion'), on = 'ubicacion')['nuevaubicacion']
+
+    return(dfSetDatos, kmeanModel)
 
 dateFechaActual = date.today()
 dateFechaAnterior = dateFechaActual - timedelta(days= 45)
@@ -89,4 +124,9 @@ dfSetLimpio = obtenerOferta(dfSetLimpio)
 # Tambien se filtran las columnas a ser consideradas para la construccion.
 dfSetLimpio = filtrarRegistros(dfSetLimpio)
 
-print(len(dfSetLimpio))
+# Se crea una columna ubicacion acorde a los valores de latitud y longitud.
+# Tambien se obtiene el modelo kmeans que fue generado.
+dfSetLimpio, kmeanModel = generarModeloUbicacion(dfSetLimpio)
+
+
+print(dfSetLimpio)
