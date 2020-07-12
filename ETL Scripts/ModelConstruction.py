@@ -1,12 +1,13 @@
+import re
 import pandas as pd
 import numpy as np
 from datetime import date, timedelta
 from sqlalchemy import create_engine
 from sklearn.cluster import KMeans
-#from sklearn.model_selection import train_test_split
-#from sklearn.linear_model import LinearRegression
-#from sklearn.ensemble import RandomForestRegressor
-#from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_squared_error, r2_score
 
 
 # Lectura de los datos limpios en BD
@@ -105,6 +106,31 @@ def generarModeloUbicacion(dfSetDatos):
 
     return(dfSetDatos, kmeanModel)
 
+# Elimina valores nulos para ciertos campos ya establecidos
+def eliminarValoresNulos(dfSetDatos, dfSetInicial):
+
+    # Obtenemos la info de los registros que tienen parqueo como nulo.
+    dfSinParqueo = dfSetDatos.loc[pd.isnull(dfSetDatos['parqueo']), ['idregistro', 'parqueo']]
+
+    # Obtenemos la info de los regsitros del catalogo inicial solo para los registros de interes.
+    dfCatalogo = dfSetInicial.loc[dfSetInicial.idregistro.isin(dfSinParqueo['idregistro']), ['idregistro', 'descripcion']]
+
+    # Verificamos si existe palabra parqueo dentro de columna descripcion
+    dfCatalogo['parqueo'] = ["Si" if (re.search('parqueo',str(descripcion).lower())) else "No" \
+                            for descripcion in dfCatalogo['descripcion']]
+
+    # Asignacion de los valores calculados para parqueo
+    dfSetDatos = dfSetDatos.set_index(['idregistro'])\
+        .combine_first(dfCatalogo[['idregistro', 'parqueo']].set_index(['idregistro']))\
+        .reset_index()
+
+
+    # Verificamos si existe palabra parqueo dentro de columna descripcion
+    dfSetDatos['parqueo'] = [1 if (parqueo == "Si") else 0 for parqueo in dfSetDatos['parqueo']]
+
+    return(dfSetDatos)
+
+
 dateFechaActual = date.today()
 dateFechaAnterior = dateFechaActual - timedelta(days= 45)
 
@@ -122,11 +148,13 @@ dfSetLimpio = obtenerOferta(dfSetLimpio)
 
 # Se filtran solo los registros necesarios para la construccion del modelo
 # Tambien se filtran las columnas a ser consideradas para la construccion.
-dfSetLimpio = filtrarRegistros(dfSetLimpio)
+dfSetFiltrado = filtrarRegistros(dfSetLimpio)
 
 # Se crea una columna ubicacion acorde a los valores de latitud y longitud.
 # Tambien se obtiene el modelo kmeans que fue generado.
-dfSetLimpio, kmeanModel = generarModeloUbicacion(dfSetLimpio)
+dfSetFiltrado, kmeanModel = generarModeloUbicacion(dfSetFiltrado)
 
+# Eliminamos valores nulos
+dfSetFiltrado = eliminarValoresNulos(dfSetFiltrado, dfSetLimpio)
 
-print(dfSetLimpio)
+print(dfSetFiltrado)
