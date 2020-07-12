@@ -10,6 +10,7 @@ def lecturaDataLimpia(dateFechaInicial, dateFechaFinal):
 
     strQuery = 'select * from mvwSetLimpio where  fecharegistro between %(fechaInicial)s and %(fechaFinal)s'
     
+    # Leyendo de base de datos especificando el query y los parametros de fecha.
     dfRegistros = pd.read_sql_query(strQuery, 
         params = {
             'fechaInicial': dateFechaInicial, 
@@ -18,11 +19,28 @@ def lecturaDataLimpia(dateFechaInicial, dateFechaFinal):
     return dfRegistros
 
 
+# Funcion encargada de obtener solo los ultimos registros para cada idregistro
+def obtenerRegistrosUnicos(dfSetDatos):
+    # Conversion a string del campo idregistro
+    dfAnalisisSet = dfSetDatos.astype({'idregistro': 'str'})
+
+    # Conversion a fecha del campo fecharegsitro
+    dfAnalisisSet['fecharegistro'] = pd.to_datetime(dfAnalisisSet['fecharegistro'], format = "%Y-%m-%d")
+
+    # Obtencion de fecha maxima por cada idregistro y filtro de esos registros.
+    dfAnalisisSet = dfAnalisisSet.loc[dfAnalisisSet.reset_index().groupby(['idregistro'])['fecharegistro'].idxmax()]
+
+    return(dfAnalisisSet)
+
 
 dateFechaActual = date.today()
 dateFechaAnterior = dateFechaActual - timedelta(days= 45)
 
 dfSetLimpio = lecturaDataLimpia(dateFechaAnterior, dateFechaActual)
 
-print(dfSetLimpio)
+print(len(dfSetLimpio.index))
+
+dfSetLimpio = obtenerRegistrosUnicos(dfSetLimpio)
+
+print(len(dfSetLimpio.index))
 
