@@ -25,7 +25,6 @@ def lecturaDataLimpia(dateFechaInicial, dateFechaFinal):
 
     return dfRegistros
 
-
 # Funcion encargada de obtener solo los ultimos registros para cada idregistro
 def obtenerRegistrosUnicos(dfSetDatos):
     # Conversion a string del campo idregistro
@@ -39,7 +38,6 @@ def obtenerRegistrosUnicos(dfSetDatos):
 
     return(dfAnalisisSet)
 
-
 # Calcula el precio real en quetzales para cada registro del set de datos
 def obtenerPrecioReal(dfSetDatos):
     # Factor de conversion
@@ -49,7 +47,6 @@ def obtenerPrecioReal(dfSetDatos):
     dfSetDatos['precioreal'] = np.where(dfSetDatos['moneda'] == 'US$', dfSetDatos['precio'] * cambio_moneda, 
                                             dfSetDatos['precio'])
     return (dfSetDatos)
-
 
 # Calcula la columna oferta para determinar si es un alquiler o una venta
 def obtenerOferta(dfSetDatos):
@@ -109,6 +106,8 @@ def generarModeloUbicacion(dfSetDatos):
 # Elimina valores nulos para ciertos campos ya establecidos
 def eliminarValoresNulos(dfSetDatos, dfSetInicial):
 
+    # ------------------------------------------ [Parqueo]
+
     # Obtenemos la info de los registros que tienen parqueo como nulo.
     dfSinParqueo = dfSetDatos.loc[pd.isnull(dfSetDatos['parqueo']), ['idregistro', 'parqueo']]
 
@@ -128,8 +127,43 @@ def eliminarValoresNulos(dfSetDatos, dfSetInicial):
     # Verificamos si existe palabra parqueo dentro de columna descripcion
     dfSetDatos['parqueo'] = [1 if (parqueo == "Si") else 0 for parqueo in dfSetDatos['parqueo']]
 
+    # ---------------------------------------- [Tipo Vendedor]
+
+    # Obtenemos los codigos de vendedor donde el tipo_vendedor es nulo.
+    dfSinVendedor = dfSetDatos.loc[pd.isnull(dfSetDatos['tipovendedor']), ['idregistro', 'tipovendedor', 'userid']]
+
+    # Calculamos la frecuencia de registros para cada user_id
+    srFreqVendedores = pd.Series(dfSinVendedor['userid']).value_counts(dropna = False)
+
+    # Para aquellos user_id que solo poseen un registro se les asigna el valor de "Dueno Directo"
+    intNumeroPivote = 1
+    idxDuenos = srFreqVendedores[srFreqVendedores == intNumeroPivote].index
+    dfSinVendedor['tipovendedor'] = ["Dueño Directo" if x else "Inmobiliaria" for x in dfSinVendedor.userid.isin(idxDuenos)]
+
+    # Asignacion de los valores calculados para tipo de vendedor
+    dfSetDatos = dfSetDatos.set_index(['idregistro'])\
+        .combine_first(dfSinVendedor[['idregistro', 'tipovendedor']].set_index(['idregistro']))\
+        .reset_index()
+
     return(dfSetDatos)
 
+# Creacion de variables dummies por Hot Encodign para moneda, tipo vendedor y ubicacion
+def crearVariablesDummy(dfSetDatos):
+    
+    # Eliminamos variables dummy si ya existen
+    dfSetDatos = dfSetDatos.drop(['monedaq','monedad', 'tipoinmobiliaria', 'tipodueno'], axis=1, errors='ignore')
+
+    # Convertimos aquellas variables categoricas a variables dummy.
+    dfSetDatos = pd.concat([dfSetDatos, pd.get_dummies(dfSetDatos['moneda'])\
+                                .rename(columns={'Q': 'monedaq', 'US$': 'monedad'})], axis = 1)
+
+    dfSetDatos = pd.concat([dfSetDatos, pd.get_dummies(dfSetDatos['tipovendedor'])\
+                                .rename(columns={'Inmobiliaria': 'tipoinmobiliaria', 
+                                                'Dueño Directo': 'tipodueno'})], axis = 1)
+
+    dfSetDatos = pd.concat([dfSetDatos, pd.get_dummies(dfSetDatos['ubicacion'])], axis = 1)
+
+    return(dfSetDatos)
 
 dateFechaActual = date.today()
 dateFechaAnterior = dateFechaActual - timedelta(days= 45)
@@ -156,5 +190,8 @@ dfSetFiltrado, kmeanModel = generarModeloUbicacion(dfSetFiltrado)
 
 # Eliminamos valores nulos
 dfSetFiltrado = eliminarValoresNulos(dfSetFiltrado, dfSetLimpio)
+
+# Creamos variables dummy por Hot Encoding
+dfSetFiltrado = crearVariablesDummy(dfSetFiltrado)
 
 print(dfSetFiltrado)
