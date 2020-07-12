@@ -45,17 +45,48 @@ def obtenerPrecioReal(dfSetDatos):
     return (dfSetDatos)
 
 
+# Calcula la columna oferta para determinar si es un alquiler o una venta
+def obtenerOferta(dfSetDatos):
+    # Asignacion de valor pivote
+    intValorPivote = 50000
+
+    # Creacion de nueva columna oferta.
+    dfSetDatos['oferta'] = ['Venta' if precio > intValorPivote else 'Alquiler' for precio in dfSetDatos['precioreal']]
+
+    return(dfSetDatos)
+
+# Filtra los registros que so los de interes para construir el modelo
+def filtrarRegistros(dfSetDatos):
+    # Especificamos los filtros para registros
+    dfSetDatos = dfSetDatos[(dfSetDatos['oferta'] == 'Venta') & 
+                (dfSetDatos['tipoinmueble'] == 0) & # 0 = Apartamento
+                ((dfSetDatos['amueblado'] == False) | (dfSetDatos['amueblado'].isnull()))]
+
+    # Especificamos los filtros para columnas
+    dfSetDatos = dfSetDatos[['codigoencabezado', 'idregistro', 'banos', 'habitaciones', 
+                               'espacio_m2', 'latitud', 'longitud', 'moneda',
+                               'parqueo', 'tipovendedor', 'precioreal', 'userid']]
+
+    return(dfSetDatos)
+
+
 dateFechaActual = date.today()
 dateFechaAnterior = dateFechaActual - timedelta(days= 45)
 
+# Lectura en base de datos de los registros candidatos para la construccion del modelo
 dfSetLimpio = lecturaDataLimpia(dateFechaAnterior, dateFechaActual)
 
-print(len(dfSetLimpio.index))
-
+# Se obtienen los registros unicos (eliminar duplicados)
 dfSetLimpio = obtenerRegistrosUnicos(dfSetLimpio)
 
-print(len(dfSetLimpio.index))
-
+# Se calcula una columna de precio real (quetzales)
 dfSetLimpio = obtenerPrecioReal(dfSetLimpio)
 
-print(dfSetLimpio)
+# Se calcula una columna para ver si la oferta es de Venta o Alquiler
+dfSetLimpio = obtenerOferta(dfSetLimpio)
+
+# Se filtran solo los registros necesarios para la construccion del modelo
+# Tambien se filtran las columnas a ser consideradas para la construccion.
+dfSetLimpio = filtrarRegistros(dfSetLimpio)
+
+print(len(dfSetLimpio))
