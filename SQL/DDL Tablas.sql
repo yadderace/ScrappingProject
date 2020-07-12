@@ -72,8 +72,8 @@ CREATE TABLE public.limpiezadata
 create materialized view mvwSetLimpio as
 
 select codigoencabezado, 
-	cast(idregistro as integer) idregistro, cast(fecharegistro as date) fecharegistro,
-	cast(fecha_creacion as date) fechacreacion, cast(valido_hasta as date) validohasta,
+	cast(idregistro as integer) idregistro, cast(fecha_creacion as date) fechacreacion,
+	cast(fecharegistro as date) fecharegistro, cast(valido_hasta as date) validohasta,
 	cast(latitud as float) latitud, cast(longitud as float) longitud, 
 	cast (espacio_m2 as float) espacio_m2, cast(administracion as float) administracion, 
 	cast (precio as float) precio, cast(amueblado::numeric::integer as boolean) amueblado,
@@ -96,7 +96,7 @@ from (
 		codigoencabezado bigint, administracion text, amueblado text,
 		antiguedad text, banos text, descripcion text,
 		espacio_m2 text, estudio text, favoritos text,
-		fecharegistro text, fecha_creacion text, habitaciones text,
+		fecha_creacion text, fecharegistro text, habitaciones text,
 		idregistro text, latitud text, linkpagina text,
 		longitud text, moneda text, parqueo text,
 		partner_code text, piso text, precio text,
