@@ -101,7 +101,7 @@ def generarModeloUbicacion(dfSetDatos):
     # Colocamos los nuevos valores de ubicacion
     dfSetDatos['ubicacion'] = dfSetDatos.join(dfMapeo.set_index('ubicacion'), on = 'ubicacion')['nuevaubicacion']
 
-    return(dfSetDatos, kmeanModel)
+    return(dfSetDatos, kmeanModel, len(dfMapeo))
 
 # Elimina valores nulos para ciertos campos ya establecidos
 def eliminarValoresNulos(dfSetDatos, dfSetInicial):
@@ -165,6 +165,24 @@ def crearVariablesDummy(dfSetDatos):
 
     return(dfSetDatos)
 
+# Selecionamos las variables (columnas necesarias) para la construccion del modelo.
+def seleccionVariablesModelo(dfSetDatos, intCantidadUbicacion):
+
+    # Seleccion de todas las variables de ubicacion
+    variables_ubicacion =["U" + str(ubicacion) for ubicacion in [*range(1, intCantidadUbicacion + 1)]]
+
+    # Seleccion de las demas variables
+    variables_set = ['idregistro', 'banos', 'espacio_m2', 
+                    'habitaciones', 'monedaq', 'monedad',
+                    'parqueo', 'tipodueno', 'tipoinmobiliaria', 
+                    'precioreal']
+                    
+    # Seleccion de las variables
+    dfModeloSet = dfSetDatos[dfSetDatos.columns.intersection(variables_ubicacion + variables_set)]
+
+    return dfModeloSet
+
+
 dateFechaActual = date.today()
 dateFechaAnterior = dateFechaActual - timedelta(days= 45)
 
@@ -186,7 +204,7 @@ dfSetFiltrado = filtrarRegistros(dfSetLimpio)
 
 # Se crea una columna ubicacion acorde a los valores de latitud y longitud.
 # Tambien se obtiene el modelo kmeans que fue generado.
-dfSetFiltrado, kmeanModel = generarModeloUbicacion(dfSetFiltrado)
+dfSetFiltrado, kmeanModel, intCantidadUbicacion = generarModeloUbicacion(dfSetFiltrado)
 
 # Eliminamos valores nulos
 dfSetFiltrado = eliminarValoresNulos(dfSetFiltrado, dfSetLimpio)
@@ -194,4 +212,8 @@ dfSetFiltrado = eliminarValoresNulos(dfSetFiltrado, dfSetLimpio)
 # Creamos variables dummy por Hot Encoding
 dfSetFiltrado = crearVariablesDummy(dfSetFiltrado)
 
-print(dfSetFiltrado)
+# Obtener el set que se va a utilizar para el modelo.
+dfSetModelo = seleccionVariablesModelo(dfSetFiltrado, intCantidadUbicacion)
+
+
+print(dfSetModelo)
