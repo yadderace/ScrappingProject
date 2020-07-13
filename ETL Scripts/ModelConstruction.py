@@ -1,6 +1,8 @@
 import re
 import pandas as pd
 import numpy as np
+import pickle
+import datetime
 from datetime import date, timedelta
 from sqlalchemy import create_engine
 from sklearn.cluster import KMeans
@@ -172,7 +174,7 @@ def seleccionVariablesModelo(dfSetDatos, intCantidadUbicacion):
     variables_ubicacion =["U" + str(ubicacion) for ubicacion in [*range(1, intCantidadUbicacion + 1)]]
 
     # Seleccion de las demas variables
-    variables_set = ['idregistro', 'banos', 'espacio_m2', 
+    variables_set = ['codigoencabezado','idregistro', 'banos', 'espacio_m2', 
                     'habitaciones', 'monedaq', 'monedad',
                     'parqueo', 'tipodueno', 'tipoinmobiliaria', 
                     'precioreal']
@@ -182,6 +184,88 @@ def seleccionVariablesModelo(dfSetDatos, intCantidadUbicacion):
 
     return dfModeloSet
 
+# Transforma los datos y devuelve un set que sera utilizado para la creacion del modelo.
+def transformarDatosModelo(dfSetLimpio):
+    # Se obtienen los registros unicos (eliminar duplicados)
+    dfSetLimpio = obtenerRegistrosUnicos(dfSetLimpio)
+
+    # Se calcula una columna de precio real (quetzales)
+    dfSetLimpio = obtenerPrecioReal(dfSetLimpio)
+
+    # Se calcula una columna para ver si la oferta es de Venta o Alquiler
+    dfSetLimpio = obtenerOferta(dfSetLimpio)
+
+    # Se filtran solo los registros necesarios para la construccion del modelo
+    # Tambien se filtran las columnas a ser consideradas para la construccion.
+    dfSetFiltrado = filtrarRegistros(dfSetLimpio)
+
+    # Se crea una columna ubicacion acorde a los valores de latitud y longitud.
+    # Tambien se obtiene el modelo kmeans que fue generado.
+    dfSetFiltrado, kmeanModel, intCantidadUbicacion = generarModeloUbicacion(dfSetFiltrado)
+
+    # Eliminamos valores nulos
+    dfSetFiltrado = eliminarValoresNulos(dfSetFiltrado, dfSetLimpio)
+
+    # Creamos variables dummy por Hot Encoding
+    dfSetFiltrado = crearVariablesDummy(dfSetFiltrado)
+
+    # Obtener el set que se va a utilizar para el modelo.
+    dfSetModelo = seleccionVariablesModelo(dfSetFiltrado, intCantidadUbicacion)
+
+    return (dfSetModelo)
+
+# Construye el modelo de entrenamiento y devuelve los score para el test
+def construirModeloLinearRegression(xTrain, xTest, yTrain, yTest):
+    
+    # Construccion del modelo
+    linearRegModel = LinearRegression()
+    linearRegModel.fit(xTrain, yTrain)
+
+    # Prediccion para los test
+    yHat = linearRegModel.predict(xTest)
+
+    # Calculo de metricas
+    mseLinearRegModel = mean_squared_error(yTest, yHat)
+    r2LinearRegModel = r2_score(yTest, yHat)
+
+    return (linearRegModel, yHat, mseLinearRegModel, r2LinearRegModel)
+
+# Construye el modelo de entrenamiento y devuelve los score para el test
+def construirModeloRandomForestRegressor(xTrain, xTest, yTrain, yTest):
+    
+    # Construccion del modelo
+    randomForestModel = RandomForestRegressor(n_estimators = 200, max_depth = 20, random_state = 1505)
+    randomForestModel.fit(xTrain, yTrain)
+
+    # Obtenemos las predicciones del modelo para los datos test
+    yHat = randomForestModel.predict(xTest)
+
+    # Calculo de metricas
+    mseRandomForestModel = mean_squared_error(yTest, yHat)
+    r2RandomForestModel = r2_score(yTest, yHat)
+
+    return (randomForestModel, yHat, mseRandomForestModel, r2RandomForestModel)
+
+# Construye los modelos sobre el set de datos y guarda los archivos.
+def construirModelos(dfSetModelo):
+    
+    # Seleccionamos las variables predictoras
+    dfPredictors = dfSetModelo.loc[:, ~dfSetModelo.columns.isin(['precioreal', 'idregistro', 'codigoencabezado'])]
+    
+    # Seleccionamos la variable dependiente
+    Y = dfSetModelo['precioreal']
+    
+    # Separamos los datos para test y training
+    xTrain, xTest, yTrain, yTest = train_test_split(dfPredictors, Y, test_size = 0.3, random_state=1505)
+
+    # Ejecutamos los modelos y obtenemos los scores
+    lrModel, lrHat, lrMSE, lrR2 = construirModeloLinearRegression(xTrain, xTest, yTrain, yTest)
+    rfModel, rfHat, rfMSE, rfR2 = construirModeloRandomForestRegressor(xTrain, xTest, yTrain, yTest)
+
+    # Escribir modelos
+    pickle.dump(lrModel, open('lr' + str(datetime.datetime.now().timestamp()) + '.mdl', 'wb'))
+    pickle.dump(lrModel, open('rf' + str(datetime.datetime.now().timestamp()) + '.mdl', 'wb'))
+
 
 dateFechaActual = date.today()
 dateFechaAnterior = dateFechaActual - timedelta(days= 45)
@@ -189,31 +273,8 @@ dateFechaAnterior = dateFechaActual - timedelta(days= 45)
 # Lectura en base de datos de los registros candidatos para la construccion del modelo
 dfSetLimpio = lecturaDataLimpia(dateFechaAnterior, dateFechaActual)
 
-# Se obtienen los registros unicos (eliminar duplicados)
-dfSetLimpio = obtenerRegistrosUnicos(dfSetLimpio)
+# Tranformacion de los datos a utilizar para el modelo
+dfSetModelo = transformarDatosModelo(dfSetLimpio)
 
-# Se calcula una columna de precio real (quetzales)
-dfSetLimpio = obtenerPrecioReal(dfSetLimpio)
-
-# Se calcula una columna para ver si la oferta es de Venta o Alquiler
-dfSetLimpio = obtenerOferta(dfSetLimpio)
-
-# Se filtran solo los registros necesarios para la construccion del modelo
-# Tambien se filtran las columnas a ser consideradas para la construccion.
-dfSetFiltrado = filtrarRegistros(dfSetLimpio)
-
-# Se crea una columna ubicacion acorde a los valores de latitud y longitud.
-# Tambien se obtiene el modelo kmeans que fue generado.
-dfSetFiltrado, kmeanModel, intCantidadUbicacion = generarModeloUbicacion(dfSetFiltrado)
-
-# Eliminamos valores nulos
-dfSetFiltrado = eliminarValoresNulos(dfSetFiltrado, dfSetLimpio)
-
-# Creamos variables dummy por Hot Encoding
-dfSetFiltrado = crearVariablesDummy(dfSetFiltrado)
-
-# Obtener el set que se va a utilizar para el modelo.
-dfSetModelo = seleccionVariablesModelo(dfSetFiltrado, intCantidadUbicacion)
-
-
-print(dfSetModelo)
+# Construimos los modelos y guardamos sus datos
+construirModelos(dfSetModelo)
