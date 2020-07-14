@@ -108,7 +108,7 @@ CREATE TABLE public.modelodata
 	fecharegistro timestamp without time zone DEFAULT now(),
 	CONSTRAINT modelodata_pkey PRIMARY KEY (idmodelodata),
 	CONSTRAINT modelodata_idmodelo_fkey FOREIGN KEY (idmodelo, nombrecampo)
-        REFERENCES public.campomodelo (idmodelo, nombrecampo) MATCH SIMPLE
+        REFERENCES public.modelocampo (idmodelo, nombrecampo) MATCH SIMPLE
         ON UPDATE NO ACTION
         ON DELETE NO ACTION,
     CONSTRAINT modelodata_codigoencabezado_fkey FOREIGN KEY (codigoencabezado)

@@ -249,11 +249,16 @@ def construirModeloRandomForestRegressor(xTrain, xTest, yTrain, yTest):
 # Se obtiene un dataframe que especifica los campos y su tipo de datos para el dataframe
 def transformarCampos(dfData):
     
+    dfCampos = dfData.drop(columns = ['codigoencabezado'], errors ='ignore' , axis = 1)
+
     # Se crea nuevo dataframe con nombres de columnas y sus respectivos tipos de datos
-    dfCampos = pd.DataFrame(dfData[dfData.columns].dtypes).reset_index()
+    dfCampos = pd.DataFrame(dfCampos[dfCampos.columns].dtypes).reset_index()
 
     # Se establecen los nombres de columnas para el dataframe
     dfCampos.columns = ['nombrecampo', 'tipodatacampo']
+
+    # Cambiamos el tipo de datos
+    dfCampos = dfCampos.astype({'nombrecampo': 'str', 'tipodatacampo': 'str'})
 
     return (dfCampos)
 
@@ -268,15 +273,19 @@ def registrarModelo(dfSetModelo, xTrain, fileName, nombreModelo, mseScore, r2Sco
     strQuery = "INSERT INTO modeloencabezado(tipomodelo, archivomodelo, msescore, r2score) VALUES (%(tipomodelo)s, %(archivomodelo)s, %(msescore)s, %(r2score)s) RETURNING idmodelo"
     idmodelo = con.execute(strQuery, tipomodelo = nombreModelo, archivomodelo = fileName, msescore = mseScore, r2score = r2Score).fetchone()[0]
 
-    
     # Obtenemos los set de train y test
     dfTrain = dfSetModelo.loc[dfSetModelo.index.isin(xTrain.index)]
     dfTest = dfSetModelo.loc[~dfSetModelo.index.isin(xTrain.index)]
 
     # Obtenemos el dataframe de campos
-    dfCamposTrain = transformarCampos(dfTrain)
-    dfCamposTest = transformarCampos(dfTest)
+    dfCampos = transformarCampos(dfTrain)
 
+    dfCampos['idmodelo'] = idmodelo
+
+    dfCampos.to_sql('modelocampo', index = False, if_exists = 'append', con = engine)
+
+    print(dfCampos)
+    
 
 
 # Construye los modelos sobre el set de datos y guarda los archivos.
