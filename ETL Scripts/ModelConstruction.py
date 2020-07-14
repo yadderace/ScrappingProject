@@ -246,6 +246,39 @@ def construirModeloRandomForestRegressor(xTrain, xTest, yTrain, yTest):
 
     return (randomForestModel, yHat, mseRandomForestModel, r2RandomForestModel)
 
+# Se obtiene un dataframe que especifica los campos y su tipo de datos para el dataframe
+def transformarCampos(dfData):
+    
+    # Se crea nuevo dataframe con nombres de columnas y sus respectivos tipos de datos
+    dfCampos = pd.DataFrame(dfData[dfData.columns].dtypes).reset_index()
+
+    # Se establecen los nombres de columnas para el dataframe
+    dfCampos.columns = ['nombrecampo', 'tipodatacampo']
+
+    return (dfCampos)
+
+# Registra el modelo creado y los datos con los que fue generado y probado
+def registrarModelo(dfSetModelo, xTrain, fileName, nombreModelo, mseScore, r2Score):
+    
+    # Conexion a base de datos
+    engine = create_engine('postgresql://postgres:150592@localhost:5432/DBApartamentos')
+    con = engine.connect()
+    
+    # Query para insercion de nuevo registro
+    strQuery = "INSERT INTO modeloencabezado(tipomodelo, archivomodelo, msescore, r2score) VALUES (%(tipomodelo)s, %(archivomodelo)s, %(msescore)s, %(r2score)s) RETURNING idmodelo"
+    idmodelo = con.execute(strQuery, tipomodelo = nombreModelo, archivomodelo = fileName, msescore = mseScore, r2score = r2Score).fetchone()[0]
+
+    
+    # Obtenemos los set de train y test
+    dfTrain = dfSetModelo.loc[dfSetModelo.index.isin(xTrain.index)]
+    dfTest = dfSetModelo.loc[~dfSetModelo.index.isin(xTrain.index)]
+
+    # Obtenemos el dataframe de campos
+    dfCamposTrain = transformarCampos(dfTrain)
+    dfCamposTest = transformarCampos(dfTest)
+
+
+
 # Construye los modelos sobre el set de datos y guarda los archivos.
 def construirModelos(dfSetModelo):
     
@@ -262,9 +295,17 @@ def construirModelos(dfSetModelo):
     lrModel, lrHat, lrMSE, lrR2 = construirModeloLinearRegression(xTrain, xTest, yTrain, yTest)
     rfModel, rfHat, rfMSE, rfR2 = construirModeloRandomForestRegressor(xTrain, xTest, yTrain, yTest)
 
+    # Filenames
+    strFileNameLR = 'lr' + str(datetime.datetime.now().timestamp()) + '.mdl'
+    strFileNameRF = 'rf' + str(datetime.datetime.now().timestamp()) + '.mdl'
+
     # Escribir modelos
-    pickle.dump(lrModel, open('lr' + str(datetime.datetime.now().timestamp()) + '.mdl', 'wb'))
-    pickle.dump(lrModel, open('rf' + str(datetime.datetime.now().timestamp()) + '.mdl', 'wb'))
+    pickle.dump(lrModel, open(strFileNameLR, 'wb'))
+    pickle.dump(lrModel, open(strFileNameRF, 'wb'))
+
+    # Registramos el modelo en base de datos
+    registrarModelo(dfSetModelo, xTrain, strFileNameLR, 'LR', lrMSE, lrR2)
+    registrarModelo(dfSetModelo, xTrain, strFileNameRF, 'RF', rfMSE, rfR2)
 
 
 dateFechaActual = date.today()
