@@ -82,15 +82,15 @@ CREATE TABLE public.modeloencabezado
 );
 
 
-CREATE TABLE public.campomodelo
+CREATE TABLE public.modelocampo
 (
-    idcampomodelo bigint NOT NULL GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 9223372036854775807 CACHE 1 ),
+    idmodelocampo bigint NOT NULL GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 9223372036854775807 CACHE 1 ),
     idmodelo bigint NOT NULL,
     nombrecampo character varying(50) NOT NULL,
 	tipodatacampo character varying NOT NULL DEFAULT 0,
 	fecharegistro timestamp without time zone DEFAULT now(),
-	CONSTRAINT campomodelo_pkey PRIMARY KEY (idmodelo, nombrecampo),
-	CONSTRAINT campomodelo_idmodelo_fkey FOREIGN KEY (idmodelo)
+	CONSTRAINT modelocampo_pkey PRIMARY KEY (idmodelo, nombrecampo),
+	CONSTRAINT modelocampo_idmodelo_fkey FOREIGN KEY (idmodelo)
         REFERENCES public.modeloencabezado(idmodelo) MATCH SIMPLE
         ON UPDATE NO ACTION
         ON DELETE NO ACTION
