@@ -262,6 +262,16 @@ def transformarCampos(dfData):
 
     return (dfCampos)
 
+# Transforma los datos para pivotear por codigoencabezad
+def transformarCamposData(dfData):
+    
+    # Trasladando columnas a registros
+    dfTransformacion = pd.DataFrame(dfData.melt(id_vars = 'codigoencabezado', var_name = 'nombrecampo', value_name = 'valordata'))
+    dfTransformacion = dfTransformacion.astype({'nombrecampo':'str', 'valordata':'str'})
+
+    return(dfTransformacion)
+
+
 # Registra el modelo creado y los datos con los que fue generado y probado
 def registrarModelo(dfSetModelo, xTrain, fileName, nombreModelo, mseScore, r2Score):
     
@@ -284,8 +294,20 @@ def registrarModelo(dfSetModelo, xTrain, fileName, nombreModelo, mseScore, r2Sco
 
     dfCampos.to_sql('modelocampo', index = False, if_exists = 'append', con = engine)
 
-    print(dfCampos)
-    
+    # Registro de los datos de entrenamiento
+    dfTransformados = transformarCamposData(dfTrain)
+    dfTransformados['idmodelo'] = idmodelo
+    dfTransformados['tipodata'] = 'TR'
+    dfTransformados.to_sql('modelodata', index = False, if_exists = 'append', con = engine)
+
+
+    # Registro de los datos de prueba
+    dfTransformados = transformarCamposData(dfTest)
+    dfTransformados['idmodelo'] = idmodelo
+    dfTransformados['tipodata'] = 'TS'
+    dfTransformados.to_sql('modelodata', index = False, if_exists = 'append', con = engine)
+
+    return(dfTransformados)    
 
 
 # Construye los modelos sobre el set de datos y guarda los archivos.

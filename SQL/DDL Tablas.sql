@@ -100,11 +100,11 @@ CREATE TABLE public.modelocampo
 CREATE TABLE public.modelodata
 (
     idmodelodata bigint NOT NULL GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 9223372036854775807 CACHE 1 ),
-	nombrecampo character varying (50) NOT NULL,
 	idmodelo bigint NOT NULL,
-    codigoencabezado bigint NOT NULL,
+    nombrecampo character varying (50) NOT NULL,
+	codigoencabezado bigint NOT NULL,
     valordata text,
-	tipodata char(1) NOT NULL,
+	tipodata char(2) NOT NULL,
 	fecharegistro timestamp without time zone DEFAULT now(),
 	CONSTRAINT modelodata_pkey PRIMARY KEY (idmodelodata),
 	CONSTRAINT modelodata_idmodelo_fkey FOREIGN KEY (idmodelo, nombrecampo)
