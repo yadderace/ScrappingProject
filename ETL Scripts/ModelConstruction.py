@@ -1,8 +1,9 @@
+import os
 import re
-import pandas as pd
-import numpy as np
 import pickle
 import datetime
+import pandas as pd
+import numpy as np
 from datetime import date, timedelta
 from sqlalchemy import create_engine
 from sklearn.cluster import KMeans
@@ -271,7 +272,6 @@ def transformarCamposData(dfData):
 
     return(dfTransformacion)
 
-
 # Registra el modelo creado y los datos con los que fue generado y probado
 def registrarModelo(dfSetModelo, xTrain, fileName, nombreModelo, mseScore, r2Score):
     
@@ -282,6 +282,7 @@ def registrarModelo(dfSetModelo, xTrain, fileName, nombreModelo, mseScore, r2Sco
     # Query para insercion de nuevo registro
     strQuery = "INSERT INTO modeloencabezado(tipomodelo, archivomodelo, msescore, r2score) VALUES (%(tipomodelo)s, %(archivomodelo)s, %(msescore)s, %(r2score)s) RETURNING idmodelo"
     idmodelo = con.execute(strQuery, tipomodelo = nombreModelo, archivomodelo = fileName, msescore = mseScore, r2score = r2Score).fetchone()[0]
+    con.close()
 
     # Obtenemos los set de train y test
     dfTrain = dfSetModelo.loc[dfSetModelo.index.isin(xTrain.index)]
@@ -295,20 +296,35 @@ def registrarModelo(dfSetModelo, xTrain, fileName, nombreModelo, mseScore, r2Sco
     dfCampos.to_sql('modelocampo', index = False, if_exists = 'append', con = engine)
 
     # Registro de los datos de entrenamiento
-    dfTransformados = transformarCamposData(dfTrain)
-    dfTransformados['idmodelo'] = idmodelo
-    dfTransformados['tipodata'] = 'TR'
-    dfTransformados.to_sql('modelodata', index = False, if_exists = 'append', con = engine)
+    dfTransformadosTR = transformarCamposData(dfTrain)
+    dfTransformadosTR['idmodelo'] = idmodelo
+    dfTransformadosTR['tipodata'] = 'TR'
+    dfTransformadosTR.to_sql('modelodata', index = False, if_exists = 'append', con = engine)
 
 
     # Registro de los datos de prueba
-    dfTransformados = transformarCamposData(dfTest)
-    dfTransformados['idmodelo'] = idmodelo
-    dfTransformados['tipodata'] = 'TS'
-    dfTransformados.to_sql('modelodata', index = False, if_exists = 'append', con = engine)
+    dfTransformadosTS = transformarCamposData(dfTest)
+    dfTransformadosTS['idmodelo'] = idmodelo
+    dfTransformadosTS['tipodata'] = 'TS'
+    dfTransformadosTS.to_sql('modelodata', index = False, if_exists = 'append', con = engine)
 
-    return(dfTransformados)    
+    return(idmodelo)    
 
+# Actualizamos los registros para dejar el modelo que estara activo.
+def actualizarModeloActivo(idModeloActivo):
+    
+    # Conexion a base de datos
+    engine = create_engine('postgresql://postgres:150592@localhost:5432/DBApartamentos')
+    con = engine.connect()
+    
+    # Ejecutamos actualizacion en de modelos
+    strQuery = "UPDATE modeloencabezado SET active = false"
+    con.execute(strQuery)
+
+    # Actualizamos el modelo activo
+    strQuery = "UPDATE modeloencabezado SET active = true WHERE idmodelo = %(idModelo)s"
+    con.execute(strQuery, idModelo = idModeloActivo)
+    con.close()
 
 # Construye los modelos sobre el set de datos y guarda los archivos.
 def construirModelos(dfSetModelo):
@@ -335,9 +351,14 @@ def construirModelos(dfSetModelo):
     pickle.dump(lrModel, open(strFileNameRF, 'wb'))
 
     # Registramos el modelo en base de datos
-    registrarModelo(dfSetModelo, xTrain, strFileNameLR, 'LR', lrMSE, lrR2)
-    registrarModelo(dfSetModelo, xTrain, strFileNameRF, 'RF', rfMSE, rfR2)
+    idmodeloLR = registrarModelo(dfSetModelo, xTrain, strFileNameLR, 'LR', lrMSE, lrR2)
+    idmodeloRF = registrarModelo(dfSetModelo, xTrain, strFileNameRF, 'RF', rfMSE, rfR2)
 
+    # Validamos cual de los dos tiene un mejor
+    if(lrR2 >= rfR2):
+        actualizarModeloActivo(idmodeloLR)
+    else:
+        actualizarModeloActivo(idmodeloRF)
 
 dateFechaActual = date.today()
 dateFechaAnterior = dateFechaActual - timedelta(days= 45)
