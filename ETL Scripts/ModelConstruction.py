@@ -343,12 +343,15 @@ def construirModelos(dfSetModelo):
     rfModel, rfHat, rfMSE, rfR2 = construirModeloRandomForestRegressor(xTrain, xTest, yTrain, yTest)
 
     # Filenames
+    directorioModelo = os.environ.get('MODEL_DIRECTORY')
+    print(directorioModelo)
     strFileNameLR = 'lr' + str(datetime.datetime.now().timestamp()) + '.mdl'
     strFileNameRF = 'rf' + str(datetime.datetime.now().timestamp()) + '.mdl'
 
+
     # Escribir modelos
-    pickle.dump(lrModel, open(strFileNameLR, 'wb'))
-    pickle.dump(lrModel, open(strFileNameRF, 'wb'))
+    pickle.dump(lrModel, open(directorioModelo + strFileNameLR, 'wb'))
+    pickle.dump(lrModel, open(directorioModelo + strFileNameRF, 'wb'))
 
     # Registramos el modelo en base de datos
     idmodeloLR = registrarModelo(dfSetModelo, xTrain, strFileNameLR, 'LR', lrMSE, lrR2)
