@@ -1,5 +1,5 @@
 CREATE TABLE public.encabezadoregistros
-(
+	(
     codigoencabezado bigint NOT NULL GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 9223372036854775807 CACHE 1 ),
     idregistro bigint NOT NULL,
     linkpagina character varying(500) COLLATE pg_catalog."default" NOT NULL,
@@ -118,7 +118,6 @@ CREATE TABLE public.modelodata
 );
 
 create materialized view mvwSetLimpio as
-
 select codigoencabezado, 
 	cast(idregistro as integer) idregistro, cast(fecha_creacion as date) fechacreacion,
 	cast(fecharegistro as date) fecharegistro, cast(valido_hasta as date) validohasta,
@@ -128,10 +127,9 @@ select codigoencabezado,
 	cast(parqueo::numeric::integer as boolean) parqueo, cast(estudio::numeric::integer as boolean) estudio,
 	cast(banos::numeric as integer) as banos, cast(piso::numeric as integer) as piso, 
 	cast(habitaciones::numeric as integer) as habitaciones, cast(favoritos::numeric as integer) as favoritos,
-	cast(tipo::numeric as integer) tipoinmueble,
+	cast(tipo::numeric as integer) tipoinmueble, cast(tipo_vendedor::numeric as integer) as tipovendedor,
 	moneda, descripcion, linkpagina, titulo,
 	partner_code as partnercode,
-	tipo_vendedor as tipovendedor,
 	user_id as userid
 from (
 	select * 
@@ -151,3 +149,21 @@ from (
 		tipo text, tipo_vendedor text, titulo text,
 		user_id text, valido_hasta text
 	)) as pivot;
+
+
+DROP FUNCTION IF EXISTS f_mycross(text, text);
+
+DO
+$do$
+BEGIN
+
+EXECUTE (
+   SELECT 'CREATE OR REPLACE FUNCTION f_mycross(text, text)
+             RETURNS TABLE (registration_id integer, '
+       || string_agg(pivot_header || ' text', ', ')
+       || $$) AS '$libdir/tablefunc', 'crosstab_hash' LANGUAGE C STABLE STRICT$$
+   FROM  (SELECT DISTINCT quote_ident(nombrecampo::text) AS pivot_header FROM modelodata ORDER BY 1) x
+   );
+
+END
+$do$;  -- LANGUAGE plpgsql is the default
