@@ -35,8 +35,7 @@ ui <- dashboardPage(skin = "green",
                     actionButton("calcular", "Calcular")
                     ),
                 
-                
-                valueBox("Q0.00", "Precio", width = 2, icon = icon("credit-card"))
+                valueBoxOutput("precio")
               )
       )
       

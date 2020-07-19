@@ -24,7 +24,7 @@ shinyServer(function(input, output) {
     # Calculo de moneda
     moneda_q = 0
     moneda_d = 0
-    if(moneda == "Dolar"){
+    if(moneda == 1){ # 1 = Dolar, 2 = Quetzales
       moneda_d = 1
     }else{
       moneda_q = 1
@@ -34,13 +34,13 @@ shinyServer(function(input, output) {
     # Calculo de vendedor
     tipodueno = 0
     tipoinmobiliaria = 0
-    if(tipo_vendedor == "Inmobiliaria"){
-      tipoinmobiliaria = 1
-    }else{
+    if(tipo_vendedor == 1){ # 1 = Dueno Directo; 2 = Inmobiliaria
       tipodueno = 1
+    }else{
+      tipoinmobiliaria = 1
     }
     
-    parqueo <- ifelse(parqueo == "Si", 1, 0)
+    parqueo <- ifelse(parqueo == 1, 1, 0)
     
     parms <- data.frame(espacio_m2 = espacio_m2,
                   banos = banos,
@@ -53,12 +53,13 @@ shinyServer(function(input, output) {
     
     url <- "http://127.0.0.1:5000/predict"
     
-    print("Hola")
     
-    precio <- POST(url, body = parms, encode = "json")
+    res <- POST(url, body = parms, encode = "json")
     
-    print(precio)
+    precio <- round(as.numeric(content(res, "text")), digits = 0)
     
+    output$precio <- renderValueBox({valueBox(paste("Q", formatC(precio, format = "d", big.mark = ","), sep = ""), 
+                                              "Precio", width = 2, icon = icon("credit-card"))})
     
   })
   
