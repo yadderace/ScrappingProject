@@ -23,26 +23,36 @@ def predict():
     
     # Obtiene directorio de las variables del sistema
     directorioModelo = os.environ.get('MODEL_DIRECTORY')
-    print(directorioModelo)
-
+    
     # Obtiene el nombre del archivo
     strArchivoModelo = obtenerModeloActivo()
-    print(strArchivoModelo)
-
+    
     # Carga del modelo
     model = pickle.load(open(directorioModelo + strArchivoModelo, 'rb'))
     
     # Lectura de variables del request
     dfParams = pd.DataFrame(request.get_json())
-    print(dfParams)
     
-    #prediction = model.predict([np.array(list(data.values()))])
-    #print(prediction)
+    dfParams['U1'] = 0
+    dfParams['U2'] = 0
+    dfParams['U3'] = 0
+    dfParams['U4'] = 0
+    dfParams['U5'] = 0
+    dfParams['U6'] = 0
+    dfParams['U7'] = 0
+    dfParams['U8'] = 0
+    dfParams['U9'] = 1
+    dfParams['U10'] = 0
+    
+    print(dfParams)
 
-    #output = prediction[0]
+    prediction = model.predict(dfParams)
+    print(prediction)
 
-    #return jsonify(output)
-    return "Hola"
+    output = prediction[0]
+    print(output)
+
+    return str(output)
     
 
 if __name__ == "__main__":
