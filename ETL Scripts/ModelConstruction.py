@@ -24,7 +24,7 @@ def lecturaDataLimpia(dateFechaInicial, dateFechaFinal):
     dfRegistros = pd.read_sql_query(strQuery, 
         params = {
             'fechaInicial': dateFechaInicial, 
-            'fechaFinal': dateFechaFinal}, con=engine)
+            'fechaFinal': dateFechaFinal}, coerce_float = False, con=engine)
 
     return dfRegistros
 
@@ -113,12 +113,12 @@ def eliminarValoresNulos(dfSetDatos, dfSetInicial):
 
     # Obtenemos la info de los registros que tienen parqueo como nulo.
     dfSinParqueo = dfSetDatos.loc[pd.isnull(dfSetDatos['parqueo']), ['idregistro', 'parqueo']]
-
+    
     # Obtenemos la info de los regsitros del catalogo inicial solo para los registros de interes.
     dfCatalogo = dfSetInicial.loc[dfSetInicial.idregistro.isin(dfSinParqueo['idregistro']), ['idregistro', 'descripcion']]
 
     # Verificamos si existe palabra parqueo dentro de columna descripcion
-    dfCatalogo['parqueo'] = ["Si" if (re.search('parqueo',str(descripcion).lower())) else "No" \
+    dfCatalogo['parqueo'] = [True if (re.search('parqueo',str(descripcion).lower())) else False \
                             for descripcion in dfCatalogo['descripcion']]
 
     # Asignacion de los valores calculados para parqueo
@@ -128,7 +128,7 @@ def eliminarValoresNulos(dfSetDatos, dfSetInicial):
 
 
     # Verificamos si existe palabra parqueo dentro de columna descripcion
-    dfSetDatos['parqueo'] = [1 if (parqueo == "Si") else 0 for parqueo in dfSetDatos['parqueo']]
+    dfSetDatos['parqueo'] = [1 if (parqueo == True) else 0 for parqueo in dfSetDatos['parqueo']]
 
     # ---------------------------------------- [Tipo Vendedor]
 
@@ -141,12 +141,13 @@ def eliminarValoresNulos(dfSetDatos, dfSetInicial):
     # Para aquellos user_id que solo poseen un registro se les asigna el valor de "Dueno Directo"
     intNumeroPivote = 1
     idxDuenos = srFreqVendedores[srFreqVendedores == intNumeroPivote].index
-    dfSinVendedor['tipovendedor'] = ["Dueño Directo" if x else "Inmobiliaria" for x in dfSinVendedor.userid.isin(idxDuenos)]
+    dfSinVendedor['tipovendedor'] = [0 if x else 1 for x in dfSinVendedor.userid.isin(idxDuenos)] # 0 = Dueno Directo, 1 = Inmobiliaria
 
     # Asignacion de los valores calculados para tipo de vendedor
-    dfSetDatos = dfSetDatos.set_index(['idregistro'])\
-        .combine_first(dfSinVendedor[['idregistro', 'tipovendedor']].set_index(['idregistro']))\
-        .reset_index()
+    dfSetDatos = dfSetDatos.set_index(['idregistro']).combine_first(dfSinVendedor[['idregistro', 'tipovendedor']].set_index(['idregistro'])).reset_index()
+
+    # Convertimos a entero
+    dfSetDatos = dfSetDatos.astype({'tipovendedor': 'int'})
 
     return(dfSetDatos)
 
@@ -161,9 +162,9 @@ def crearVariablesDummy(dfSetDatos):
                                 .rename(columns={'Q': 'monedaq', 'US$': 'monedad'})], axis = 1)
 
     dfSetDatos = pd.concat([dfSetDatos, pd.get_dummies(dfSetDatos['tipovendedor'])\
-                                .rename(columns={'Inmobiliaria': 'tipoinmobiliaria', 
-                                                'Dueño Directo': 'tipodueno'})], axis = 1)
-
+                                .rename(columns={1: 'tipoinmobiliaria', 
+                                                0: 'tipodueno'})], axis = 1)
+    
     dfSetDatos = pd.concat([dfSetDatos, pd.get_dummies(dfSetDatos['ubicacion'])], axis = 1)
 
     return(dfSetDatos)
@@ -337,14 +338,13 @@ def construirModelos(dfSetModelo):
     
     # Separamos los datos para test y training
     xTrain, xTest, yTrain, yTest = train_test_split(dfPredictors, Y, test_size = 0.3, random_state=1505)
-
+    
     # Ejecutamos los modelos y obtenemos los scores
     lrModel, lrHat, lrMSE, lrR2 = construirModeloLinearRegression(xTrain, xTest, yTrain, yTest)
     rfModel, rfHat, rfMSE, rfR2 = construirModeloRandomForestRegressor(xTrain, xTest, yTrain, yTest)
 
-    # Filenames
+    # Guarda modelos en MODEL DIRECTORY
     directorioModelo = os.environ.get('MODEL_DIRECTORY')
-    print(directorioModelo)
     strFileNameLR = 'lr' + str(datetime.datetime.now().timestamp()) + '.mdl'
     strFileNameRF = 'rf' + str(datetime.datetime.now().timestamp()) + '.mdl'
 
@@ -364,7 +364,7 @@ def construirModelos(dfSetModelo):
         actualizarModeloActivo(idmodeloRF)
 
 dateFechaActual = date.today()
-dateFechaAnterior = dateFechaActual - timedelta(days= 45)
+dateFechaAnterior = dateFechaActual - timedelta(days= 60)
 
 # Lectura en base de datos de los registros candidatos para la construccion del modelo
 dfSetLimpio = lecturaDataLimpia(dateFechaAnterior, dateFechaActual)
