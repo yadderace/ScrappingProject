@@ -79,7 +79,6 @@ def predict():
                         'tipoinmobiliaria',	
                         'U0',
                         'U1',	
-                        'U10',	
                         'U2',	
                         'U3',	
                         'U4',	
