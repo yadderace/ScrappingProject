@@ -49,7 +49,9 @@ shinyServer(function(input, output) {
                   monedad = moneda_d,
                   parqueo = parqueo,
                   tipodueno = tipodueno,
-                  tipoinmobiliaria = tipoinmobiliaria)
+                  tipoinmobiliaria = tipoinmobiliaria,
+                  longitud = -90.522,
+                  latitud = 14.607)
     
     url <- "http://127.0.0.1:5000/predict"
     
