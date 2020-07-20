@@ -75,36 +75,68 @@ def filtrarRegistros(dfSetDatos):
 
     return(dfSetDatos)
 
+# Guarda el modelo KMeans en el directorio de modelos y registra en base de datos el modelo
+def registrarModeloKMean(kmModelo):
+    
+    # Guarda modelos en MODEL DIRECTORY
+    directorioModelo = os.environ.get('MODEL_DIRECTORY')
+    strFileNameKM = 'km' + str(datetime.datetime.now().timestamp()) + '.mdl'
+    strTipoModelo = 'KM'
+
+    # Escribir modelo
+    pickle.dump(kmModelo, open(directorioModelo + strFileNameKM, 'wb'))
+
+    # Conexion a base de datos
+    engine = create_engine('postgresql://postgres:150592@localhost:5432/DBApartamentos')
+    con = engine.connect()
+    
+    # Query para insercion de nuevo registro
+    strQuery = "INSERT INTO modeloencabezado(tipomodelo, archivomodelo, msescore, r2score) VALUES (%(tipomodelo)s, %(archivomodelo)s, %(msescore)s, %(r2score)s) RETURNING idmodelo"
+    idmodelo = con.execute(strQuery, tipomodelo = strTipoModelo, archivomodelo = strFileNameKM, msescore = 0.0, r2score = 0.0).fetchone()[0]
+    
+    # Ejecutamos actualizacion en de modelos
+    strQuery = "UPDATE modeloencabezado SET active = false WHERE tipomodelo in ('KM')"
+    con.execute(strQuery)
+
+    # Actualizamos el modelo activo
+    strQuery = "UPDATE modeloencabezado SET active = true WHERE idmodelo = %(idModelo)s"
+    con.execute(strQuery, idModelo = idmodelo)
+    
+    con.close()
+
+
 # Se genera un modelo kmeans para la ubicacion de latitud y longitud
-def generarModeloUbicacion(dfSetDatos):
-    intKClusters = 13
-
+def generarModeloUbicacion(dfSetDatos, intClusters, intFrecMin):
+    
     # Se obtienen los valores que se utilizaran para la construccion de modelo KMeans
-    npUbicaciones = np.array(list(zip(dfSetDatos['longitud'], 
-                                    dfSetDatos['latitud']))).reshape(len(dfSetDatos['longitud']), 2)
+    dfUbicaciones = dfSetDatos[['longitud', 'latitud']]
 
-    # Construccion del modelo
-    kmeanModel = KMeans(n_clusters = intKClusters, max_iter = 2000).fit(npUbicaciones)
+    # Construccion del modelo inicial
+    kmeanModel = KMeans(n_clusters = intClusters, max_iter = 2000).fit(dfUbicaciones)
 
-    # Asignacion de clusters a registros
-    dfSetDatos['ubicacion'] = ["U" + str(ubicacion) for ubicacion in kmeanModel.labels_]
+    # Obtenemos las frecuencias de registros por categoria
+    frecCat = np.unique(kmeanModel.labels_, return_counts = True)
+    dfCategorias = pd.DataFrame({'categoria': frecCat[0], 
+                  'frecuencia': frecCat[1], 
+                  'longitud': kmeanModel.cluster_centers_[:,0],
+                  'latitud': kmeanModel.cluster_centers_[:,1]})
 
-    # Calculo de frecuencia para ubicacion
-    srFreqUbicacion = pd.Series(dfSetDatos['ubicacion']).value_counts()
+    # Filtrado para aquellas categorias que tienen mas de diez registros
+    dfCategorias = dfCategorias.loc[dfCategorias['frecuencia'] >= intFrecMin]
 
-    # Eliminando elementos que tienen baja frecuencia para ubicacion
-    intNumeroPivote = 10
-    idxEliminar = srFreqUbicacion[srFreqUbicacion <= intNumeroPivote].index
-    dfSetDatos = dfSetDatos[~dfSetDatos.ubicacion.isin(idxEliminar)]
+    # Obtenemos los nuevos centroides para el nuevo modelo kmeans
+    npCentroids = dfCategorias[['longitud', 'latitud']].to_numpy()
 
-    # Creamos el dataframe con el cual vamos a mapear los valores
-    dfMapeo = pd.DataFrame({'ubicacion': dfSetDatos.ubicacion.unique()})
-    dfMapeo['nuevaubicacion'] = ["U" + str(ubicacion) for ubicacion in range(1, len(dfMapeo) + 1)]
+    # Construccion del modelo final y registro
+    kmeanModelFinal = KMeans(init = npCentroids, 
+                        n_clusters = len(dfCategorias.index), 
+                        max_iter = 2000).fit(dfSetDatos[['longitud', 'latitud']]) 
+    registrarModeloKMean(kmeanModelFinal)
 
-    # Colocamos los nuevos valores de ubicacion
-    dfSetDatos['ubicacion'] = dfSetDatos.join(dfMapeo.set_index('ubicacion'), on = 'ubicacion')['nuevaubicacion']
-
-    return(dfSetDatos, kmeanModel, len(dfMapeo))
+    # Creamos la columna ubicacion
+    dfSetDatos['ubicacion'] = ["U" + str(categoria) for categoria in kmeanModelFinal.labels_]
+    
+    return(dfSetDatos, kmeanModelFinal, len(np.unique(kmeanModelFinal.labels_)))
 
 # Elimina valores nulos para ciertos campos ya establecidos
 def eliminarValoresNulos(dfSetDatos, dfSetInicial):
@@ -173,7 +205,7 @@ def crearVariablesDummy(dfSetDatos):
 def seleccionVariablesModelo(dfSetDatos, intCantidadUbicacion):
 
     # Seleccion de todas las variables de ubicacion
-    variables_ubicacion =["U" + str(ubicacion) for ubicacion in [*range(1, intCantidadUbicacion + 1)]]
+    variables_ubicacion =["U" + str(ubicacion) for ubicacion in [*range(0, intCantidadUbicacion)]]
 
     # Seleccion de las demas variables
     variables_set = ['codigoencabezado','idregistro', 'banos', 'espacio_m2', 
@@ -203,7 +235,9 @@ def transformarDatosModelo(dfSetLimpio):
 
     # Se crea una columna ubicacion acorde a los valores de latitud y longitud.
     # Tambien se obtiene el modelo kmeans que fue generado.
-    dfSetFiltrado, kmeanModel, intCantidadUbicacion = generarModeloUbicacion(dfSetFiltrado)
+    intCantidadCluster = 13 # TODO: Cantidad Inicial de Clusters. Podria Configurarse
+    intFrecuenciaMinima = 10 # TODO: Frecuencia Minima Aceptada. Podria Configurarse
+    dfSetFiltrado, kmeanModel, intCantidadUbicacion = generarModeloUbicacion(dfSetFiltrado, intCantidadCluster, intFrecuenciaMinima)
 
     # Eliminamos valores nulos
     dfSetFiltrado = eliminarValoresNulos(dfSetFiltrado, dfSetLimpio)
@@ -319,7 +353,7 @@ def actualizarModeloActivo(idModeloActivo):
     con = engine.connect()
     
     # Ejecutamos actualizacion en de modelos
-    strQuery = "UPDATE modeloencabezado SET active = false"
+    strQuery = "UPDATE modeloencabezado SET active = false WHERE tipomodelo in ('LR', 'RF')"
     con.execute(strQuery)
 
     # Actualizamos el modelo activo
@@ -363,14 +397,18 @@ def construirModelos(dfSetModelo):
     else:
         actualizarModeloActivo(idmodeloRF)
 
-dateFechaActual = date.today()
-dateFechaAnterior = dateFechaActual - timedelta(days= 60)
 
-# Lectura en base de datos de los registros candidatos para la construccion del modelo
-dfSetLimpio = lecturaDataLimpia(dateFechaAnterior, dateFechaActual)
+def main():
+    dateFechaActual = date.today()
+    dateFechaAnterior = dateFechaActual - timedelta(days= 60)
 
-# Tranformacion de los datos a utilizar para el modelo
-dfSetModelo = transformarDatosModelo(dfSetLimpio)
+    # Lectura en base de datos de los registros candidatos para la construccion del modelo
+    dfSetLimpio = lecturaDataLimpia(dateFechaAnterior, dateFechaActual)
 
-# Construimos los modelos y guardamos sus datos
-construirModelos(dfSetModelo)
+    # Tranformacion de los datos a utilizar para el modelo
+    dfSetModelo = transformarDatosModelo(dfSetLimpio)
+
+    # Construimos los modelos y guardamos sus datos
+    construirModelos(dfSetModelo)
+
+main()
