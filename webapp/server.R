@@ -7,10 +7,18 @@
 
 library(shiny)
 library(httr)
+library(leaflet)
 
 shinyServer(function(input, output) {
   
+  valores <- reactiveValues()
+  
+  valores$coordenadas <- NULL
+  
   observeEvent(input$calcular, {
+    
+    if(is.null(valores$coordenadas))
+      return()
     
     
     # Lectura de variables del formulario
@@ -50,8 +58,8 @@ shinyServer(function(input, output) {
                   parqueo = parqueo,
                   tipodueno = tipodueno,
                   tipoinmobiliaria = tipoinmobiliaria,
-                  longitud = -90.522,
-                  latitud = 14.607)
+                  longitud = valores$coordenadas$lng,
+                  latitud = valores$coordenadas$lat)
     
     url <- "http://127.0.0.1:5000/predict"
     
@@ -60,9 +68,41 @@ shinyServer(function(input, output) {
     
     precio <- round(as.numeric(content(res, "text")), digits = 0)
     
-    output$precio <- renderValueBox({valueBox(paste("Q", formatC(precio, format = "d", big.mark = ","), sep = ""), 
+    strSimbolo <- "Q"
+    if(moneda_d == 1){
+      precio <- precio / 7.69
+      strSimbolo <- "US$"
+    }
+    strPrecio <- paste(strSimbolo, formatC(precio, format = "d", big.mark = ","), sep = "")
+    
+    output$precio <- renderValueBox({valueBox(strPrecio, 
                                               "Precio", width = 2, icon = icon("credit-card"))})
     
+  })
+  
+  output$mymap <- renderLeaflet({
+    
+  # Centre the map in the middle of Toronto
+  leaflet() %>% addProviderTiles("CartoDB.Positron") %>% 
+    #fitBounds(160, -30, 185, -50) %>%
+    setView(lng = -90.5069, 
+            lat = 14.6349, 
+            zoom = 12) %>%
+    addMarkers(lng = -90.5069, lat = 14.6349)
+  })
+  
+  observeEvent(input$mymap_click, {
+    click <- input$mymap_click
+    if(!is.null(click))
+      leafletProxy("mymap") %>%
+      setView(lng = click$lng, lat = click$lat, zoom = 12) %>%
+      clearMarkers() %>%
+      addMarkers(lng = click$lng, lat = click$lat)
+    
+    isolate(
+      valores$coordenadas <- list(lat = click$lat, lng = click$lng)
+    );
+      
   })
   
 })

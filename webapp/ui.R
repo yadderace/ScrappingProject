@@ -7,6 +7,7 @@
 
 library(shiny)
 library(shinydashboard)
+library(leaflet)
 
 ui <- dashboardPage(skin = "green",
   dashboardHeader(title = "UVG"),
@@ -25,7 +26,7 @@ ui <- dashboardPage(skin = "green",
       
       tabItem(tabName = "prediccion_precio",
               fluidRow(
-                box(title = "Caractersiticas", width = 6, solidHeader = TRUE, status = "primary", 
+                box(title = "Caractersiticas", width = 4, solidHeader = TRUE, status = "primary", 
                     numericInput("espacio_m2", h2("Espacio (m2)"), value = 25, min = 0),
                     numericInput("habitaciones", h2("Habitaciones"), value = 2, min = 0),
                     numericInput("banos", h2("Banos"), value = 2, min = 0),
@@ -33,6 +34,10 @@ ui <- dashboardPage(skin = "green",
                     radioButtons("parqueo", h3("Parqueo"), choices = list("Si" = 1, "No" = 2), selected = 1),
                     radioButtons("vendedor", h3("Tipo Vendedor"), choices = list("Dueno Directo" = 1, "Inmobiliaria" = 2), selected = 1),
                     actionButton("calcular", "Calcular")
+                    ),
+                
+                box(title = "Ubicacion", width = 6, solidHeader = TRUE,
+                    leafletOutput("mymap")
                     ),
                 
                 valueBoxOutput("precio")
