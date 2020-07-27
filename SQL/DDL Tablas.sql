@@ -118,19 +118,10 @@ CREATE TABLE public.modelodata
 );
 
 
-DROP FUNCTION IF EXISTS f_mycross(text, text);
-
-DO
-$do$
-BEGIN
-
-EXECUTE (
-   SELECT 'CREATE OR REPLACE FUNCTION f_mycross(text, text)
-             RETURNS TABLE (registration_id integer, '
-       || string_agg(pivot_header || ' text', ', ')
-       || $$) AS '$libdir/tablefunc', 'crosstab_hash' LANGUAGE C STABLE STRICT$$
-   FROM  (SELECT DISTINCT quote_ident(nombrecampo::text) AS pivot_header FROM modelodata ORDER BY 1) x
-   );
-
-END
-$do$;  -- LANGUAGE plpgsql is the default
+CREATE TABLE public.logaccionessistema
+(
+    idlogacciones bigint NOT NULL GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 9223372036854775807 CACHE 1 ),
+    nombreaccion character varying (50) NOT NULL,
+    descripcionaccion text,
+    fechaaccion timestamp without time zone DEFAULT now() 
+)
