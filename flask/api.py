@@ -2,6 +2,9 @@ import os
 import pickle 
 import numpy as np
 import pandas as pd
+import DBRegistroAcciones as localdb
+
+from AccionSistema import AccionSistema
 from sqlalchemy import create_engine
 from flask import Flask, request, jsonify
 
@@ -69,7 +72,7 @@ def predict():
     dfParams['habitaciones'] = dfParams['habitaciones'].astype(float)
     dfParams[['monedaq', 'monedad', 'tipodueno', 'tipoinmobiliaria']] = dfParams[['monedaq', 'monedad', 'tipodueno', 'tipoinmobiliaria']].astype(np.uint8)
     
-    dfParams = dfParams[['banos',	
+    listaEncabezados = ['banos',	
                         'espacio_m2',	
                         'habitaciones',	
                         'parqueo',	
@@ -86,17 +89,15 @@ def predict():
                         'U6',	
                         'U7',	
                         'U8',	
-                        'U9']]
-
-    print(dfParams)
-
-    print(dfParams.dtypes)
-
+                        'U9']
+    dfParams = dfParams[listaEncabezados]
+    
     prediction = modeloRegresion.predict(dfParams)
-    print(prediction)
-
+    
     output = prediction[0]
-    print(output)
+    
+
+    localdb.DBRegistroAcciones.registrarAccion(AccionSistema.PRICE_PREDICTION.name, "Prediccion con los encabezados (" + str(listaEncabezados)[1:-1] + ") y los valores ("+ str(dfParams.loc[0]) +")")
 
     return str(output)
     
