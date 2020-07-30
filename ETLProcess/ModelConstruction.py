@@ -4,6 +4,8 @@ import pickle
 import datetime
 import pandas as pd
 import numpy as np
+import DBController.DBController as localdb
+
 from datetime import date, timedelta
 from sqlalchemy import create_engine
 from sklearn.cluster import KMeans
@@ -283,7 +285,7 @@ def construirModeloRandomForestRegressor(xTrain, xTest, yTrain, yTest):
     return (randomForestModel, yHat, mseRandomForestModel, r2RandomForestModel)
 
 # Se obtiene un dataframe que especifica los campos y su tipo de datos para el dataframe
-def transformarCampos(dfData):
+def transformarCampos(dfData, idmodelo):
     
     dfCampos = dfData.drop(columns = ['codigoencabezado'], errors ='ignore' , axis = 1)
 
@@ -293,8 +295,12 @@ def transformarCampos(dfData):
     # Se establecen los nombres de columnas para el dataframe
     dfCampos.columns = ['nombrecampo', 'tipodatacampo']
 
+    # Se crea campo de orden
+    dfCampos['ordencampo'] = dfCampos.index + 1
+    dfCampos['idmodelo'] = idmodelo
+
     # Cambiamos el tipo de datos
-    dfCampos = dfCampos.astype({'nombrecampo': 'str', 'tipodatacampo': 'str'})
+    dfCampos = dfCampos.astype({'nombrecampo': 'str', 'tipodatacampo': 'str', 'ordencampo': 'int', 'idmodelo': 'int'})
 
     return (dfCampos)
 
@@ -310,39 +316,46 @@ def transformarCamposData(dfData):
 # Registra el modelo creado y los datos con los que fue generado y probado
 def registrarModelo(dfSetModelo, xTrain, fileName, nombreModelo, mseScore, r2Score):
     
-    # Conexion a base de datos
-    engine = create_engine('postgresql://postgres:150592@localhost:5432/DBApartamentos')
-    con = engine.connect()
+
+    blnResultado, idmodelo, strError = localdb.DBController.registrarModeloEncabezado(nombreModelo, fileName, mseScore, r2Score)
     
-    # Query para insercion de nuevo registro
-    strQuery = "INSERT INTO modeloencabezado(tipomodelo, archivomodelo, msescore, r2score) VALUES (%(tipomodelo)s, %(archivomodelo)s, %(msescore)s, %(r2score)s) RETURNING idmodelo"
-    idmodelo = con.execute(strQuery, tipomodelo = nombreModelo, archivomodelo = fileName, msescore = mseScore, r2score = r2Score).fetchone()[0]
-    con.close()
+    # TODO Registrar error
+    if(not blnResultado):
+        print(strError)
 
     # Obtenemos los set de train y test
     dfTrain = dfSetModelo.loc[dfSetModelo.index.isin(xTrain.index)]
     dfTest = dfSetModelo.loc[~dfSetModelo.index.isin(xTrain.index)]
 
     # Obtenemos el dataframe de campos
-    dfCampos = transformarCampos(dfTrain)
+    dfCampos = transformarCampos(dfTrain, idmodelo)
+    blnResultado, strError = localdb.DBController.registrarCamposModelo(dfCampos)
 
-    dfCampos['idmodelo'] = idmodelo
-
-    dfCampos.to_sql('modelocampo', index = False, if_exists = 'append', con = engine)
-
+    # TODO Registrar error
+    if(not blnResultado):
+        print(strError)
+    
     # Registro de los datos de entrenamiento
     dfTransformadosTR = transformarCamposData(dfTrain)
     dfTransformadosTR['idmodelo'] = idmodelo
     dfTransformadosTR['tipodata'] = 'TR'
-    dfTransformadosTR.to_sql('modelodata', index = False, if_exists = 'append', con = engine)
+    blnResultado, strError = localdb.DBController.registrarModeloData(dfTransformadosTR)
 
+    # TODO Registrar error
+    if(not blnResultado):
+        print(strError)
+    
 
     # Registro de los datos de prueba
     dfTransformadosTS = transformarCamposData(dfTest)
     dfTransformadosTS['idmodelo'] = idmodelo
     dfTransformadosTS['tipodata'] = 'TS'
-    dfTransformadosTS.to_sql('modelodata', index = False, if_exists = 'append', con = engine)
+    blnResultado, strError = localdb.DBController.registrarModeloData(dfTransformadosTS)
 
+    # TODO Registrar error
+    if(not blnResultado):
+        print(strError)
+    
     return(idmodelo)    
 
 # Actualizamos los registros para dejar el modelo que estara activo.
@@ -411,4 +424,6 @@ def main():
     # Construimos los modelos y guardamos sus datos
     construirModelos(dfSetModelo)
 
-main()
+
+if __name__ == "__main__":
+    main()
