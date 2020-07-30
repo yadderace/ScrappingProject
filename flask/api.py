@@ -2,9 +2,9 @@ import os
 import pickle 
 import numpy as np
 import pandas as pd
-import DBRegistroAcciones as localdb
+import DBController as localdb
 
-from AccionSistema import AccionSistema
+from DBController.AccionSistema import AccionSistema
 from sqlalchemy import create_engine
 from flask import Flask, request, jsonify
 
@@ -96,8 +96,7 @@ def predict():
     
     output = prediction[0]
     
-
-    localdb.DBRegistroAcciones.registrarAccion(AccionSistema.PRICE_PREDICTION.name, "Prediccion con los encabezados (" + str(listaEncabezados)[1:-1] + ") y los valores ("+ str(dfParams.loc[0]) +")")
+    localdb.ConexionBaseDatos.registrarAccion(AccionSistema.PRICE_PREDICTION.name, "Prediccion con los valores("+ str(dfParams.loc[0]) +")")
 
     return str(output)
     
