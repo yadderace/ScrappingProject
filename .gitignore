@@ -4,3 +4,4 @@ ghostdriver.log
 __pycache__/DataBaseOp.cpython-37.pyc
 Notebooks/FinalSet.csv
 .Rproj.user
+**/__pycache__/
