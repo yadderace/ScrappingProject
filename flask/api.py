@@ -2,9 +2,9 @@ import os
 import pickle 
 import numpy as np
 import pandas as pd
-import DBController as localdb
+import DBOperations.DBOperations as localdb
 
-from DBController.AccionSistema import AccionSistema
+from DBOperations.AccionSistema import AccionSistema
 from sqlalchemy import create_engine
 from flask import Flask, request, jsonify
 
@@ -96,7 +96,7 @@ def predict():
     
     output = prediction[0]
     
-    localdb.ConexionBaseDatos.registrarAccion(AccionSistema.PRICE_PREDICTION.name, "Prediccion con los valores("+ str(dfParams.loc[0]) +")")
+    localdb.DBOperations.registrarAccion(AccionSistema.PRICE_PREDICTION.name, "Prediccion con los valores("+ str(dfParams.loc[0]) +")")
 
     return str(output)
     

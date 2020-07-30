@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine
 
-class DBController():
+class DBOperations():
 
     # Registra una accion en base de datos
     @staticmethod
