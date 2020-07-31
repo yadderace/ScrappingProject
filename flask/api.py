@@ -10,27 +10,6 @@ from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-# Busca el modelo activo en base de datos y devuelve el nombre del archivo.
-def obtenerModeloActivo():
-    
-    engine = create_engine('postgresql://postgres:150592@localhost:5432/DBApartamentos')
-    
-    strQuery = "SELECT archivomodelo FROM modeloencabezado WHERE active = true AND tipomodelo in ('LR', 'RF')" 
-    archivoModelo = engine.execute(strQuery).fetchone()[0]
-
-    return archivoModelo
-
-# Busca el modelo kmeans activo en base de datos y devuelve el nombre del archivo.
-def obtenerModeloKMeansActivo():
-    
-    engine = create_engine('postgresql://postgres:150592@localhost:5432/DBApartamentos')
-    
-    strQuery = "SELECT archivomodelo FROM modeloencabezado WHERE active = true AND tipomodelo in ('KM')"
-    archivoModelo = engine.execute(strQuery).fetchone()[0]
-
-    return archivoModelo
-
-
 @app.route('/predict', methods = ['POST'])
 def predict():
     
@@ -38,11 +17,17 @@ def predict():
     directorioModelo = os.environ.get('MODEL_DIRECTORY')
     
     # Obtiene el nombre del archivo para modelo de regresion y lo carga
-    strArchivoModelo = obtenerModeloActivo()
+    blnEjecucion, strArchivoModelo, strError = localdb.DBOperations.obtenerModeloRegresionActivo()
+    if(not blnEjecucion):
+        print(strError)
+    
     modeloRegresion = pickle.load(open(directorioModelo + strArchivoModelo, 'rb'))
 
     # Obtiene el nombre del archivo para el modelo kmeans y lo carga
-    strArchivoModelo = obtenerModeloKMeansActivo()
+    blnEjecucion, strArchivoModelo, strError = localdb.DBOperations.obtenerModeloKMeansActivo()
+    if(not blnEjecucion):
+        print(strError)
+    
     modeloKMeans = pickle.load(open(directorioModelo + strArchivoModelo, 'rb'))
 
     # Lectura de variables del request
@@ -56,8 +41,6 @@ def predict():
                 columns = ["U" + str(cat) for cat in np.unique(modeloKMeans.labels_)])
     dfUbicaciones["U" + str(categoria[0])] = 1
     dfUbicaciones = dfUbicaciones.astype(np.uint8)
-
-    print(dfParams)
 
     # Unimos los demas parametros
     dfParams = pd.concat([dfParams, dfUbicaciones], axis = 1)
