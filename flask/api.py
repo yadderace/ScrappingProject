@@ -10,6 +10,33 @@ from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
+# Obtiene los datos acorde al dataframe de campos
+def ordenarDatos(dfCampos, dfData):
+    
+    # Obteniendo los nombres de campo como lista
+    listaCampos = dfCampos.nombrecampo.to_list()
+
+    # Diccionario de campos
+    dictCast = pd.Series(dfCampos.tipodatacampo.values, index = dfCampos.nombrecampo).to_dict()
+    
+    
+    # Eliminar elementos en caso de que existan
+    if 'precioreal' in listaCampos:
+        listaCampos.remove('precioreal')
+        dictCast.pop('precioreal')
+    
+    if 'idregistro' in listaCampos:
+        listaCampos.remove('idregistro')
+        dictCast.pop('idregistro')
+    
+    # Seleccion y conversion de campos
+    dfData = dfData[listaCampos]
+    dfData = dfData.astype(dictCast)
+
+    
+    return dfData
+
+
 @app.route('/predict', methods = ['POST'])
 def predict():
     
@@ -17,7 +44,7 @@ def predict():
     directorioModelo = os.environ.get('MODEL_DIRECTORY')
     
     # Obtiene el nombre del archivo para modelo de regresion y lo carga
-    blnEjecucion, strArchivoModelo, strError = localdb.DBOperations.obtenerModeloRegresionActivo()
+    blnEjecucion, strArchivoModelo, dfCamposModelo, strError = localdb.DBOperations.obtenerModeloRegresionActivo()
     if(not blnEjecucion):
         print(strError)
     
@@ -40,45 +67,21 @@ def predict():
     dfUbicaciones = pd.DataFrame(np.zeros((len(np.unique(modeloKMeans.labels_)),), dtype=int).reshape(1,-1), 
                 columns = ["U" + str(cat) for cat in np.unique(modeloKMeans.labels_)])
     dfUbicaciones["U" + str(categoria[0])] = 1
-    dfUbicaciones = dfUbicaciones.astype(np.uint8)
-
+    
     # Unimos los demas parametros
     dfParams = pd.concat([dfParams, dfUbicaciones], axis = 1)
 
     # Eliminamos latitud y longitud
     dfParams = dfParams.drop(['longitud','latitud'], axis=1, errors='ignore')
     
-    dfParams.astype({'parqueo': 'int'})
+    # Seleccion y casteo de datos
+    dfParams = ordenarDatos(dfCamposModelo, dfParams)
 
-    dfParams['espacio_m2'] = dfParams['espacio_m2'].astype(float)
-    dfParams['banos'] = dfParams['banos'].astype(float)
-    dfParams['habitaciones'] = dfParams['habitaciones'].astype(float)
-    dfParams[['monedaq', 'monedad', 'tipodueno', 'tipoinmobiliaria']] = dfParams[['monedaq', 'monedad', 'tipodueno', 'tipoinmobiliaria']].astype(np.uint8)
-    
-    listaEncabezados = ['banos',	
-                        'espacio_m2',	
-                        'habitaciones',	
-                        'parqueo',	
-                        'monedaq',
-                        'monedad',	
-                        'tipodueno',	
-                        'tipoinmobiliaria',	
-                        'U0',
-                        'U1',	
-                        'U2',	
-                        'U3',	
-                        'U4',	
-                        'U5',	
-                        'U6',	
-                        'U7',	
-                        'U8',	
-                        'U9']
-    dfParams = dfParams[listaEncabezados]
-    
+    # Calculo de prediccion
     prediction = modeloRegresion.predict(dfParams)
-    
     output = prediction[0]
     
+    # Registro de accion
     localdb.DBOperations.registrarAccion(AccionSistema.PRICE_PREDICTION.name, "Prediccion con los valores("+ str(dfParams.loc[0]) +")")
 
     return str(output)

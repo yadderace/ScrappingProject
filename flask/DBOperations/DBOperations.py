@@ -1,3 +1,4 @@
+import pandas as pd
 from sqlalchemy import create_engine
 
 class DBOperations():
@@ -30,7 +31,6 @@ class DBOperations():
 
         return blnEjecucion, strError
     
-
     # Busca el modelo activo en base de datos y devuelve el nombre del archivo.
     @staticmethod
     def obtenerModeloRegresionActivo():
@@ -48,6 +48,9 @@ class DBOperations():
             strQuery = "SELECT archivomodelo FROM modeloencabezado WHERE active = true AND tipomodelo in ('LR', 'RF')"
             strArchivoModelo = con.execute(strQuery).fetchone()[0]
 
+            strQuery = "SELECT nombrecampo, tipodatacampo, ordencampo FROM modelocampo WHERE idmodelo = (SELECT idmodelo FROM modeloencabezado WHERE active = true AND tipomodelo in ('LR', 'RF')) ORDER BY ordencampo ASC"
+            dfCamposModelo = pd.read_sql_query(strQuery, con = engine)
+            
             blnEjecucion = True
 
         except Exception as e:
@@ -58,7 +61,7 @@ class DBOperations():
             if(con is not None):
                 con.close()
 
-        return blnEjecucion, strArchivoModelo, strError
+        return blnEjecucion, strArchivoModelo, dfCamposModelo, strError
 
     # Busca el modelo activo en base de datos y devuelve el nombre del archivo.
     @staticmethod
