@@ -1,7 +1,6 @@
 import requests
 import re
 import json
-import math
 
 from bs4 import BeautifulSoup
 
@@ -109,7 +108,7 @@ class Scrapping():
             
         # Haciendo consulta GET para el link
         s = requests.Session()
-        s.headers = headers
+        s.headers = {'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.143 Safari/537.36'}
     
         # Se intenta realizar peticion por Get
         r = None
@@ -136,7 +135,7 @@ class Scrapping():
             return None
 
         # Se obtiene la lista de detalles.
-        listaDetalle = obtenerDetalleRegistro(detalleRegistro.prettify())
+        listaDetalle = Scrapping.obtenerDetalleRegistro(detalleRegistro.prettify())
 
         # Se obtiene el precio de la casa.
         precioRegistro = soup.find('span', {'class': '_2xKfz'}).string.strip()
@@ -153,7 +152,7 @@ class Scrapping():
             return None
         
         # Obtener informacion de la ubicacion
-        listaUbicacion = obtenerUbicacion(registrosJS)
+        listaUbicacion = Scrapping.obtenerUbicacion(registrosJS)
 
         if(listaUbicacion is not None):
             listaDetalle = listaDetalle + listaUbicacion

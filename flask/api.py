@@ -3,6 +3,7 @@ import pickle
 import numpy as np
 import pandas as pd
 import DBOperations.DBOperations as localdb
+import DBOperations.Scrapping as localscp
 
 from DBOperations.AccionSistema import AccionSistema
 from sqlalchemy import create_engine
@@ -85,7 +86,22 @@ def predict():
     localdb.DBOperations.registrarAccion(AccionSistema.PRICE_PREDICTION.name, "Prediccion con los valores("+ str(dfParams.loc[0]) +")")
 
     return str(output)
+
+@app.route('/scrapping', methods = ['POST'])
+def scrapping():
     
+    listaAtributos = localscp.Scrapping.obtenerAtributosPagina('https://www.olx.com.gt/item/alquilo-apartamento-zona-16-a-2-minutos-de-cayala-iid-1100443094')
+    
+    print("Scrapping Finalizado")
+    
+    if(listaAtributos is None or len(listaAtributos)):
+        return None
+
+    print("Envio Respuesta")
+    
+    return listaAtributos
+
+
 
 if __name__ == "__main__":
     app.run()
