@@ -2,12 +2,16 @@ from enum import Enum
 
 class AccionSistema(Enum):
 
+    # Errores
+    ERROR = 1
+    WARNING = 2
+
     # Acciones para el sistema interno
-    SCRAPPING = 1
-    DATA_CLEANING = 2
-    MODEL_CONSTRUCTION = 3
-    MODEL_SELECTION = 4
-    MV_REFRESH = 5
+    SCRAPPING = 3
+    DATA_CLEANING = 4
+    MODEL_CONSTRUCTION = 5
+    MODEL_SELECTION = 6
+    MV_REFRESH = 7
 
 
     # Acciones para aplicativo web

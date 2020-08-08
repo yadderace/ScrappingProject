@@ -90,16 +90,24 @@ def predict():
 @app.route('/scrapping', methods = ['POST'])
 def scrapping():
     
-    listaAtributos = localscp.Scrapping.obtenerAtributosPagina('https://www.olx.com.gt/item/alquilo-apartamento-zona-16-a-2-minutos-de-cayala-iid-1100443094')
+    # Ejecucion de scrapping a pagina enviada
+    listaAtributos, strError = localscp.Scrapping.obtenerAtributosPagina('https://www.olx.com.gt/item/alquilo-apartamento-zona-16-a-2-minutos-de-cayala-iid-1100443094')
     
-    print("Scrapping Finalizado")
-    
-    if(listaAtributos is None or len(listaAtributos)):
-        return None
+    # Verificacion de errores
+    if(strError is not None):
+        localdb.DBOperations.registrarAccion(AccionSistema.ERROR.name, strError)
+        return strError
 
-    print("Envio Respuesta")
+    if(listaAtributos is None or len(listaAtributos)):
+        strError = "No se obtuvo listado de atributos."
+        localdb.DBOperations.registrarAccion(AccionSistema.WARNING.name, strError)
+        return strError
     
-    return listaAtributos
+    # Conversion a JSON de los atributos
+    jsonAtributos = json.dumps(listaAtributos)
+
+    localdb.DBOperations.registrarAccion(AccionSistema.SCRAPPING.name, jsonAtributos)
+    return jsonAtributos
 
 
 

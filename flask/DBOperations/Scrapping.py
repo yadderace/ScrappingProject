@@ -117,12 +117,12 @@ class Scrapping():
             
         except requests.exceptions.ConnectionError as e:
             #TODO Registrar error
-            return None
+            return None, str(e)
         
 
         if(r.status_code != 200):
             #TODO Registrar error de status
-            return None
+            return None, "Status Code != 200"
 
         
         htmlCode = r.text
@@ -132,7 +132,7 @@ class Scrapping():
 
         if(detalleRegistro is None):
             #TODO Registrar error
-            return None
+            return None, "div class != _3JPEe"
 
         # Se obtiene la lista de detalles.
         listaDetalle = Scrapping.obtenerDetalleRegistro(detalleRegistro.prettify())
@@ -147,9 +147,9 @@ class Scrapping():
         # Se obtiene la ubicacion.
         registrosJS = soup.find_all('script', {'type': 'text/javascript'})
         
-        if(registrosJS is None or len(registrosJS) > 0):
+        if(registrosJS is None or len(registrosJS) == 0):
             #TODO Registrar error
-            return None
+            return None, "script type text/javascript"
         
         # Obtener informacion de la ubicacion
         listaUbicacion = Scrapping.obtenerUbicacion(registrosJS)
@@ -157,4 +157,4 @@ class Scrapping():
         if(listaUbicacion is not None):
             listaDetalle = listaDetalle + listaUbicacion
         
-        return listaDetalle
+        return listaDetalle, None
