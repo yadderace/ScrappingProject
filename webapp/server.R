@@ -1,19 +1,43 @@
 
-# This is the server logic for a Shiny web application.
-# You can find out more about building applications with Shiny here:
-#
-# http://shiny.rstudio.com
-#
-
 library(shiny)
 library(httr)
 library(leaflet)
+
+source('utility/CommonFunctions.R')
 
 shinyServer(function(input, output) {
   
   valores <- reactiveValues()
   
   valores$coordenadas <- NULL
+  
+  output$mymap <- renderLeaflet({
+    
+  # Centre the map in the middle of Toronto
+  leaflet() %>% addProviderTiles("CartoDB.Positron") %>% 
+    #fitBounds(160, -30, 185, -50) %>%
+    setView(lng = -90.5069, 
+            lat = 14.6349, 
+            zoom = 12) %>%
+    addMarkers(lng = -90.5069, lat = 14.6349)
+  })
+  
+  observeEvent(input$mymap_click, {
+    click <- input$mymap_click
+    if(!is.null(click))
+      leafletProxy("mymap") %>%
+      setView(lng = click$lng, lat = click$lat, zoom = 12) %>%
+      clearMarkers() %>%
+      addMarkers(lng = click$lng, lat = click$lat)
+    
+    isolate(
+      valores$coordenadas <- list(lat = click$lat, lng = click$lng)
+    );
+      
+  })
+  
+  # ==================================================================
+  # [Button events]
   
   observeEvent(input$calcular, {
     
@@ -48,61 +72,55 @@ shinyServer(function(input, output) {
       tipoinmobiliaria = 1
     }
     
+    # Calculo de valor de parqueo
     parqueo <- ifelse(parqueo == 1, 1, 0)
     
+    
+    # Creacion de parametro para peticion
     parms <- data.frame(espacio_m2 = espacio_m2,
-                  banos = banos,
-                  habitaciones = habitaciones,
-                  monedaq = moneda_q,
-                  monedad = moneda_d,
-                  parqueo = parqueo,
-                  tipodueno = tipodueno,
-                  tipoinmobiliaria = tipoinmobiliaria,
-                  longitud = valores$coordenadas$lng,
-                  latitud = valores$coordenadas$lat)
+                        banos = banos,
+                        habitaciones = habitaciones,
+                        monedaq = moneda_q,
+                        monedad = moneda_d,
+                        parqueo = parqueo,
+                        tipodueno = tipodueno,
+                        tipoinmobiliaria = tipoinmobiliaria,
+                        longitud = valores$coordenadas$lng,
+                        latitud = valores$coordenadas$lat)
     
-    url <- "http://127.0.0.1:5000/predict"
+    # Obteniendo URL de API
+    urlApi <- fncObtenerRutaAccionAPI("PREDICT")
     
-    
+    # Ejecucion de peticion POST
     res <- POST(url, body = parms, encode = "json")
     
+    # Obtencion de respuesta y desplie en UI
     precio <- round(as.numeric(content(res, "text")), digits = 0)
-    
     strSimbolo <- "Q"
     if(moneda_d == 1){
       precio <- precio / 7.69
       strSimbolo <- "US$"
     }
     strPrecio <- paste(strSimbolo, formatC(precio, format = "d", big.mark = ","), sep = "")
-    
     output$precio <- renderValueBox({valueBox(strPrecio, 
                                               "Precio", width = 2, icon = icon("credit-card"))})
     
   })
   
-  output$mymap <- renderLeaflet({
-    
-  # Centre the map in the middle of Toronto
-  leaflet() %>% addProviderTiles("CartoDB.Positron") %>% 
-    #fitBounds(160, -30, 185, -50) %>%
-    setView(lng = -90.5069, 
-            lat = 14.6349, 
-            zoom = 12) %>%
-    addMarkers(lng = -90.5069, lat = 14.6349)
-  })
   
-  observeEvent(input$mymap_click, {
-    click <- input$mymap_click
-    if(!is.null(click))
-      leafletProxy("mymap") %>%
-      setView(lng = click$lng, lat = click$lat, zoom = 12) %>%
-      clearMarkers() %>%
-      addMarkers(lng = click$lng, lat = click$lat)
+  observeEvent(input$btnComparar, {
     
-    isolate(
-      valores$coordenadas <- list(lat = click$lat, lng = click$lng)
-    );
-      
+    # Obteniendo el URL del apartamento
+    strUrl <- input$urlApartamento
+    
+    # Construccion de parametros
+    params <- data.frame(url = strUrl)
+    
+    urlApi <- fncObtenerRutaAccionAPI("SCRAPPING")
+    
+    # Ejecucion de peticion
+    res <- POST(urlApi, body = params, encode = "json")
+    
+    
   })
-  
 })

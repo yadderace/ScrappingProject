@@ -42,7 +42,19 @@ ui <- dashboardPage(skin = "green",
                 
                 valueBoxOutput("precio")
               )
-      )
+      ),
+      
+      
+      tabItem(tabName = "comparacion_olx",
+              
+              fluidRow(box(title = "URL", width = 6, solidHeader = TRUE, status = "primary",
+                           
+                           textInput("urlApartamento", label = "", value = ""),
+                           actionButton("btnComparar", "Comparar")
+                           
+                           ))
+  
+              )
       
       
     )
