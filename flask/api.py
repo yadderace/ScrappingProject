@@ -1,5 +1,6 @@
 import os
-import pickle 
+import pickle
+import json
 import numpy as np
 import pandas as pd
 import DBOperations.DBOperations as localdb
@@ -90,25 +91,29 @@ def predict():
 @app.route('/scrapping', methods = ['POST'])
 def scrapping():
     
+    # Lectura de variables del request
+    dfParams = pd.DataFrame(request.get_json())
+    strUrl = dfParams.iloc[0]['url']
+
     # Ejecucion de scrapping a pagina enviada
-    listaAtributos, strError = localscp.Scrapping.obtenerAtributosPagina('https://www.olx.com.gt/item/alquilo-apartamento-zona-16-a-2-minutos-de-cayala-iid-1100443094')
+    listaAtributos, strError = localscp.Scrapping.obtenerAtributosPagina(strUrl)
+    
     
     # Verificacion de errores
     if(strError is not None):
         localdb.DBOperations.registrarAccion(AccionSistema.ERROR.name, strError)
         return strError
 
-    if(listaAtributos is None or len(listaAtributos)):
+    if(listaAtributos is None or len(listaAtributos) == 0):
         strError = "No se obtuvo listado de atributos."
         localdb.DBOperations.registrarAccion(AccionSistema.WARNING.name, strError)
         return strError
     
     # Conversion a JSON de los atributos
-    jsonAtributos = json.dumps(listaAtributos)
+    jsonAtributos = json.dumps(listaAtributos, default = lambda x: x.__dict__)
 
     localdb.DBOperations.registrarAccion(AccionSistema.SCRAPPING.name, jsonAtributos)
     return jsonAtributos
-
 
 
 if __name__ == "__main__":

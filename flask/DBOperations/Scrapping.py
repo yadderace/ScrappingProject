@@ -3,25 +3,22 @@ import re
 import json
 
 from bs4 import BeautifulSoup
+from json import JSONEncoder
 
 ##################################################################################
 # CLASES
 
 
 # Clase para el detalle de apartamento
-class DetalleApartamento:
+class DetalleApartamento(JSONEncoder):
     def __init__(self, campo, valor):
         self.campo = campo
         self.valor = valor
 
 
-# Clase de registro apartamento para generar objetos que se utilizaran para almacenar 
-# en base de datos.
-class RegistroApartamento:
-    def __init__(self, id, linkPagina, atributos):
-        self.id = id
-        self.linkPagina = linkPagina
-        self.atributos = atributos
+    def default(self, o):
+            return o.__dict__  
+
 
 # Clase para ejecutar el proceso de scrapping
 class Scrapping():
@@ -156,5 +153,9 @@ class Scrapping():
 
         if(listaUbicacion is not None):
             listaDetalle = listaDetalle + listaUbicacion
-        
+
+        strID = str(re.search("[0-9]+",re.search("iid-[0-9]+$", strUrl).group()).group())
+
+        listaDetalle.append(DetalleApartamento('ID', strID))
+
         return listaDetalle, None
