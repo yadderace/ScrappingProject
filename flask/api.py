@@ -111,9 +111,14 @@ def scrapping():
     
     # Conversion a JSON de los atributos
     jsonAtributos = json.dumps(listaAtributos, default = lambda x: x.__dict__)
+    
 
     localdb.DBOperations.registrarAccion(AccionSistema.SCRAPPING.name, jsonAtributos)
-    return jsonAtributos
+    return app.response_class(
+        response = jsonAtributos,
+        status=200,
+        mimetype='application/json'
+    )
 
 
 if __name__ == "__main__":
