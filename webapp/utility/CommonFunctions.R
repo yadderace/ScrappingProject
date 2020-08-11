@@ -67,10 +67,15 @@ fncObtenerValoresScrapping <- function(listaScrapping){
     
     else if(elemento$campo == "Longitude")
       listaResultado["LONGITUDE"] = as.numeric(elemento$valor)
+    
+    
+    else if(elemento$campo == "Tipo de vendedor")
+      listaResultado["INMOBILIARIA"] = ifelse(toupper(elemento$valor) == "INMOBILIARIA", TRUE, FALSE)
+    
   }
   
   
   
-  return(NULL)
+  return(listaResultado)
   
 }

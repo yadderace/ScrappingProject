@@ -127,7 +127,15 @@ shinyServer(function(input, output, session) {
     listaValores <- fncObtenerValoresScrapping(jsonResp)
     
     
-    #updateTextInput(session, "olxEspacio", jsonResp$)
+    
+    updateTextInput(session, "olxEspacio", value = listaValores$ESPACIO_M2)
+    updateTextInput(session, "olxHabitaciones", value = listaValores$HABITACIONES)
+    updateTextInput(session, "olxBanos", value = listaValores$BANOS)
+    
+    updateRadioButtons(session, "olxMoneda", selected = ifelse(listaValores$MONEDA == "Q", 2, 1))
+    updateRadioButtons(session,"olxParqueo", selected = ifelse(listaValores$PARQUEO, 1, 2))
+    updateRadioButtons(session, "olxVendedor", selected = ifelse(listaValores$INMOBILIARIA, 2, 1))
+    
     
   })
 })
