@@ -52,7 +52,16 @@ ui <- dashboardPage(skin = "green",
                            textInput("urlApartamento", label = "", value = ""),
                            actionButton("btnComparar", "Comparar")
                            
-                           ))
+              )),
+              
+              fluidRow(box(title = "Caracteristicas", width = 4, solidHeader = TRUE, status = "primary", 
+                           numericInput("olxEspacio", h2("Espacio (m2)"), value = 25, min = 0),
+                           numericInput("olxHabitaciones", h2("Habitaciones"), value = 2, min = 0),
+                           numericInput("olxBanos", h2("Banos"), value = 2, min = 0),
+                           radioButtons("olxMoneda", h3("Moneda"), choices = list("Dolar" = 1, "Quetzales" = 2), selected = 1),
+                           radioButtons("olxParqueo", h3("Parqueo"), choices = list("Si" = 1, "No" = 2), selected = 1),
+                           radioButtons("olxVendedor", h3("Tipo Vendedor"), choices = list("Dueno Directo" = 1, "Inmobiliaria" = 2), selected = 1)
+              ))
   
               )
       

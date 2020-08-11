@@ -5,7 +5,7 @@ library(leaflet)
 
 source('utility/CommonFunctions.R')
 
-shinyServer(function(input, output) {
+shinyServer(function(input, output, session) {
   
   valores <- reactiveValues()
   
@@ -119,8 +119,15 @@ shinyServer(function(input, output) {
     urlApi <- fncObtenerRutaAccionAPI("SCRAPPING")
     
     # Ejecucion de peticion
-    res <- POST(urlApi, body = params, encode = "json")
+    res <- POST(urlApi, body = params, encode = "json", parse_to_json = TRUE)
     
+    jsonResp <- content(res, as = "parsed")
+    
+    
+    listaValores <- fncObtenerValoresScrapping(jsonResp)
+    
+    
+    #updateTextInput(session, "olxEspacio", jsonResp$)
     
   })
 })

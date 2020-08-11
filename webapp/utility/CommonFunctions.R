@@ -1,3 +1,5 @@
+library(stringr)
+
 
 # ======================================================== [ fncObtenerRutaAccionAPI ]
 # Obtiene la ruta adecuada a consultar en API
@@ -17,5 +19,58 @@ fncObtenerRutaAccionAPI <- function(strAccion){
   }
   
   return(strUrlBase)
+  
+}
+
+
+# ======================================================== [ fncObtenerRutaAccionAPI ]
+# Convierte el listado de valores obtenidos en API a un listado que se puede utilizar en R
+fncObtenerValoresScrapping <- function(listaScrapping){
+  
+  listaResultado = list(
+    TIPO = NULL, HABITACIONES = NULL, BANOS = NULL,
+    ESPACIO_M2 = NULL, PARQUEO = NULL, PRECIO = NULL,
+    MONEDA = NULL, LATITUDE = NULL, LONGITUDE = NULL
+    
+  )
+  
+  # Verificar cada elemento del scrapping
+  for(elemento in listaScrapping){
+    print("Campo")
+    print(elemento$campo)
+    print("Valor")
+    print(elemento$valor)
+    
+    if(elemento$campo == "Tipo")
+      listaResultado["TIPO"] = toupper(elemento$valor)
+    
+    else if(elemento$campo == "Habitaciones")
+      listaResultado["HABITACIONES"] = as.numeric(elemento$valor)
+    
+    else if(elemento$campo == "Baños")
+      listaResultado["BANOS"] = as.numeric(elemento$valor)
+    
+    else if(elemento$campo == "Metros Cuadrados Totales")
+      listaResultado["ESPACIO_M2"] = as.numeric(str_extract(elemento$valor,"([0-9]*[.])?[0-9]+"))
+    
+    else if(elemento$campo == "Parqueadero")
+      listaResultado["PARQUEO"] = ifelse(toupper(elemento$valor) == "SI", TRUE, FALSE)
+    
+    else if(elemento$campo == "Precio"){
+      listaResultado["PRECIO"] = as.numeric(str_extract(elemento$valor,"([0-9]*[.])?[0-9]+"))
+      listaResultado["MONEDA"] = str_extract(elemento$valor,"[A-Z]+")
+    }
+    
+    else if(elemento$campo == "Latitude")
+      listaResultado["LATITUDE"] = as.numeric(elemento$valor)
+    
+    
+    else if(elemento$campo == "Longitude")
+      listaResultado["LONGITUDE"] = as.numeric(elemento$valor)
+  }
+  
+  
+  
+  return(NULL)
   
 }
