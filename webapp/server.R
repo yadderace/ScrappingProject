@@ -7,11 +7,39 @@ source('utility/CommonFunctions.R')
 
 shinyServer(function(input, output, session) {
   
+  
   valores <- reactiveValues()
   
   valores$coordenadas <- NULL
   
-  output$mymap <- renderLeaflet({
+  
+  # ==================================================================
+  # [Funciones]
+  
+  # [Fnc0]: Funcion para inicializar valores y renderizados
+  fncInit <- function(){
+    # Inicializadores de precio
+    output$precio <- renderValueBox({valueBox("Q0.00", "Precio", width = 2, icon = icon("credit-card"))})
+    output$olxPrecio <- renderValueBox({valueBox("Q0.00", "Precio", width = 3, icon = icon("credit-card"))})
+    output$predictionPrecio <- renderValueBox({valueBox("Q0.00", "Precio", width = 3, icon = icon("credit-card"))})
+  }
+  fncInit()
+  
+  # [Fnc1]: Function para limpiar todos los marker y agregar uno al mapa.
+  fncAgregarMarkMapa <- function(strNombreMapa, latitud, longitud){
+    
+    leafletProxy(strNombreMapa) %>%
+      setView(lng = longitud, lat = latitud, zoom = 12) %>%
+      clearMarkers() %>%
+      addMarkers(lng = longitud, lat = latitud)
+    
+  }
+  
+  
+  # =================================================================
+  # [Renderizado mapas]
+  
+  output$predictionMap <- renderLeaflet({
     
   # Centre the map in the middle of Toronto
   leaflet() %>% addProviderTiles("CartoDB.Positron") %>% 
@@ -22,13 +50,27 @@ shinyServer(function(input, output, session) {
     addMarkers(lng = -90.5069, lat = 14.6349)
   })
   
-  observeEvent(input$mymap_click, {
-    click <- input$mymap_click
+  
+  output$olxMap <- renderLeaflet({
+    
+    # Centre the map in the middle of Toronto
+    leaflet() %>% addProviderTiles("CartoDB.Positron") %>% 
+      #fitBounds(160, -30, 185, -50) %>%
+      setView(lng = -90.5069, 
+              lat = 14.6349, 
+              zoom = 12) %>%
+      addMarkers(lng = -90.5069, lat = 14.6349)
+  })
+  
+  
+  # =================================================================
+  # [Observe Event]
+  
+  observeEvent(input$predictionMap_click, {
+    click <- input$predictionMap_click
     if(!is.null(click))
-      leafletProxy("mymap") %>%
-      setView(lng = click$lng, lat = click$lat, zoom = 12) %>%
-      clearMarkers() %>%
-      addMarkers(lng = click$lng, lat = click$lat)
+      
+      fncAgregarMarkMapa("predictionMap", click$lat, click$lng)
     
     isolate(
       valores$coordenadas <- list(lat = click$lat, lng = click$lng)
@@ -36,8 +78,6 @@ shinyServer(function(input, output, session) {
       
   })
   
-  # ==================================================================
-  # [Button events]
   
   observeEvent(input$calcular, {
     
@@ -92,7 +132,7 @@ shinyServer(function(input, output, session) {
     urlApi <- fncObtenerRutaAccionAPI("PREDICT")
     
     # Ejecucion de peticion POST
-    res <- POST(url, body = parms, encode = "json")
+    res <- POST(urlApi, body = parms, encode = "json")
     
     # Obtencion de respuesta y desplie en UI
     precio <- round(as.numeric(content(res, "text")), digits = 0)
@@ -102,8 +142,7 @@ shinyServer(function(input, output, session) {
       strSimbolo <- "US$"
     }
     strPrecio <- paste(strSimbolo, formatC(precio, format = "d", big.mark = ","), sep = "")
-    output$precio <- renderValueBox({valueBox(strPrecio, 
-                                              "Precio", width = 2, icon = icon("credit-card"))})
+    output$precio <- renderValueBox({valueBox(strPrecio, "Precio", width = 2, icon = icon("credit-card"))})
     
   })
   
@@ -120,22 +159,55 @@ shinyServer(function(input, output, session) {
     
     # Ejecucion de peticion
     res <- POST(urlApi, body = params, encode = "json", parse_to_json = TRUE)
-    
     jsonResp <- content(res, as = "parsed")
     
     
+    # Parseo de valores JSON
     listaValores <- fncObtenerValoresScrapping(jsonResp)
     
     
+    # Configurando valores por defecto en caso de scrapping con valores nulos
     
-    updateTextInput(session, "olxEspacio", value = listaValores$ESPACIO_M2)
-    updateTextInput(session, "olxHabitaciones", value = listaValores$HABITACIONES)
-    updateTextInput(session, "olxBanos", value = listaValores$BANOS)
+    numEspacioM2 = ifelse(!is.null(listaValores$ESPACIO_M2), listaValores$ESPACIO_M2, 25)
+    numHabitaciones = ifelse(!is.null(listaValores$HABITACIONES), listaValores$HABITACIONES, 2)
+    numBanos = ifelse(!is.null(listaValores$BANOS), listaValores$BANOS, 2)
     
-    updateRadioButtons(session, "olxMoneda", selected = ifelse(listaValores$MONEDA == "Q", 2, 1))
-    updateRadioButtons(session,"olxParqueo", selected = ifelse(listaValores$PARQUEO, 1, 2))
-    updateRadioButtons(session, "olxVendedor", selected = ifelse(listaValores$INMOBILIARIA, 2, 1))
+    strMoneda = ifelse(!is.null(listaValores$MONEDA), listaValores$MONEDA, "Q")
+    blnParqueo = ifelse(!is.null(listaValores$PARQUEO), listaValores$PARQUEO, TRUE)
+    blnInmobiliaria = ifelse(!is.null(listaValores$INMOBILIARIA), listaValores$INMOBILIARIA, TRUE)
     
+    
+    # Configurando valores para controles UI
+    
+    updateTextInput(session, "olxEspacio", value = numEspacioM2)
+    updateTextInput(session, "olxHabitaciones", value = numHabitaciones)
+    updateTextInput(session, "olxBanos", value = numBanos)
+    
+    updateRadioButtons(session, "olxMoneda", selected = ifelse(strMoneda == "Q", 2, 1))
+    updateRadioButtons(session,"olxParqueo", selected = ifelse(blnParqueo, 1, 2))
+    updateRadioButtons(session, "olxVendedor", selected = ifelse(blnInmobiliaria, 2, 1))
+    
+    
+    # Actualizando mapa de ubicacion
+    if(!is.null(listaValores$LATITUD) && !is.null(listaValores$LONGITUD))
+      fncAgregarMarkMapa("olxMap", longitud = listaValores$LONGITUD, latitud = listaValores$LATITUD)
+    
+    # Agregando precio de OLX
+    # Obtencion de respuesta y desplie en UI
+    precioOlx <- round(as.numeric(listaValores$PRECIO), digits = 0)
+    strSimbolo <- "Q"
+    if(strMoneda != "Q"){
+      precioOlx <- precioOlx / 7.69
+      strSimbolo <- "US$"
+    }
+    strPrecio <- paste(strSimbolo, formatC(precioOlx, format = "d", big.mark = ","), sep = "")
+    output$olxPrecio <- renderValueBox({valueBox(strPrecio, "Precio", width = 3, icon = icon("credit-card"))})
+    
+    
+    # Agregando precio de prediccion
+    output$predictionPrecio <- renderValueBox({valueBox("Q0.00", "Precio", width = 3, icon = icon("credit-card"))})
     
   })
+  
+  
 })

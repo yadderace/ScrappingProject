@@ -36,10 +36,6 @@ fncObtenerValoresScrapping <- function(listaScrapping){
   
   # Verificar cada elemento del scrapping
   for(elemento in listaScrapping){
-    print("Campo")
-    print(elemento$campo)
-    print("Valor")
-    print(elemento$valor)
     
     if(elemento$campo == "Tipo")
       listaResultado["TIPO"] = toupper(elemento$valor)
@@ -57,7 +53,7 @@ fncObtenerValoresScrapping <- function(listaScrapping){
       listaResultado["PARQUEO"] = ifelse(toupper(elemento$valor) == "SI", TRUE, FALSE)
     
     else if(elemento$campo == "Precio"){
-      listaResultado["PRECIO"] = as.numeric(str_extract(elemento$valor,"([0-9]*[.])?[0-9]+"))
+      listaResultado["PRECIO"] = as.numeric(str_extract(gsub(",", "", elemento$valor),"([0-9]*[.])?[0-9]+"))
       listaResultado["MONEDA"] = str_extract(elemento$valor,"[A-Z]+")
     }
     
