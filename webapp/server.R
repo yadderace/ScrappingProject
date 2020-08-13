@@ -35,7 +35,6 @@ shinyServer(function(input, output, session) {
     
   }
   
-  
   # =================================================================
   # [Renderizado mapas]
   
@@ -195,17 +194,68 @@ shinyServer(function(input, output, session) {
     # Agregando precio de OLX
     # Obtencion de respuesta y desplie en UI
     precioOlx <- round(as.numeric(listaValores$PRECIO), digits = 0)
+    strSimbolo <- ifelse(strMoneda != "Q", "US$", "Q")
+    strPrecio <- paste(strSimbolo, formatC(precioOlx, format = "d", big.mark = ","), sep = "")
+    output$olxPrecio <- renderValueBox({valueBox(strPrecio, "Precio OLX", width = 3, icon = icon("credit-card"))})
+    
+    
+    # Lectura de variables del formulario
+    moneda <- input$olxMoneda
+    parqueo <- input$olxParqueo
+    tipo_vendedor <- input$olxVendedor
+    
+    # Calculo de moneda
+    moneda_q = 0
+    moneda_d = 0
+    if(moneda == 1){ # 1 = Dolar, 2 = Quetzales
+      moneda_d = 1
+    }else{
+      moneda_q = 1
+    }
+    
+    
+    # Calculo de vendedor
+    tipodueno = 0
+    tipoinmobiliaria = 0
+    if(tipo_vendedor == 1){ # 1 = Dueno Directo; 2 = Inmobiliaria
+      tipodueno = 1
+    }else{
+      tipoinmobiliaria = 1
+    }
+    
+    # Calculo de valor de parqueo
+    parqueo <- ifelse(parqueo == 1, 1, 0)
+    
+    
+    # Creacion de parametro para peticion
+    parms <- data.frame(espacio_m2 = numEspacioM2,
+                        banos = numBanos,
+                        habitaciones = numHabitaciones,
+                        monedaq = moneda_q,
+                        monedad = moneda_d,
+                        parqueo = parqueo,
+                        tipodueno = tipodueno,
+                        tipoinmobiliaria = tipoinmobiliaria,
+                        longitud = listaValores$LONGITUD,
+                        latitud = listaValores$LATITUD)
+    
+    # Obteniendo URL de API
+    urlApi <- fncObtenerRutaAccionAPI("PREDICT")
+    
+    # Ejecucion de peticion POST
+    res <- POST(urlApi, body = parms, encode = "json")
+    
+    # Obtencion de respuesta y desplie en UI
+    precio <- round(as.numeric(content(res, "text")), digits = 0)
+    
     strSimbolo <- "Q"
-    if(strMoneda != "Q"){
-      precioOlx <- precioOlx / 7.69
+    if(moneda_d == 1){
+      precio <- precio / 7.69
       strSimbolo <- "US$"
     }
-    strPrecio <- paste(strSimbolo, formatC(precioOlx, format = "d", big.mark = ","), sep = "")
-    output$olxPrecio <- renderValueBox({valueBox(strPrecio, "Precio", width = 3, icon = icon("credit-card"))})
+    strPrecioOlx <- paste(strSimbolo, formatC(precio, format = "d", big.mark = ","), sep = "")
+    output$predictionPrecio <- renderValueBox({valueBox(strPrecioOlx, "Precio Mercado", width = 2, icon = icon("credit-card"))})
     
-    
-    # Agregando precio de prediccion
-    output$predictionPrecio <- renderValueBox({valueBox("Q0.00", "Precio", width = 3, icon = icon("credit-card"))})
     
   })
   
