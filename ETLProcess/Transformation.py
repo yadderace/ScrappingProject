@@ -3,22 +3,20 @@ import json
 import ast
 import pandas as pd
 import numpy as np
+import DBController.DBController as localdb
+import DBController.AccionSistema as AccionSistema
 
 from sqlalchemy import create_engine
 
 # Lectura de datos sin limpieza en base de datos
 def lecturaDataScrapping():
-    engine = create_engine('postgresql://postgres:150592@localhost:5432/DBApartamentos')
 
-    dfEncabezadoRegistros = pd.read_sql_query('select codigoencabezado, idregistro, linkpagina, fecharegistro ' + 
-                                                'from encabezadoregistros where fechalimpieza is null',con=engine)
-
-    dfDetalleRegistros = pd.read_sql_query('select * from detalleregistros ' +
-                                                    ' where codigoencabezado in (' + 
-                                                        ' select distinct codigoencabezado ' +
-                                                        ' from encabezadoregistros' +
-                                                        ' where fechalimpieza is null'
-                                                    ')',con=engine)
+    dfEncabezadoRegistros, dfDetalleRegistros, strError = localdb.DBController.obtenerDatosScrapping()
+    
+    if(dfEncabezadoRegistros is None or dfDetalleRegistros is None):
+        # Registro de accion
+        localdb.DBController.registrarAccion(AccionSistema.ERROR.name, "No se pudo obtener registros de encabezado y detalle. [Transformation.py | lecturaDataScrapping]")
+        exit()
 
     return (dfEncabezadoRegistros, dfDetalleRegistros)
 
