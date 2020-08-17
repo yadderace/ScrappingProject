@@ -239,7 +239,7 @@ def obtenerFuentePagina(pTimeout, pNumeroClics):
     # Busca el boton de cargar mas.
     btnWebElement = None
     for element in elements:
-        if(str(element.text) == strTextoBoton):
+        if(str(element.text).upper() == strTextoBoton):
             btnWebElement = element
             break
     
@@ -274,7 +274,7 @@ urlApartamentos = "/items/q-apartamentos-zona-12"
 urlPeticion = urlBase + urlApartamentos
 
 def main():
-    intNumeroClics = 15
+    intNumeroClics = 9
     intTimeout = 30
     intCantidadLimiteRegistros = 500
     intRegistosPorPagina = 10
