@@ -15,7 +15,7 @@ def lecturaDataScrapping():
     
     if(dfEncabezadoRegistros is None or dfDetalleRegistros is None):
         # Registro de accion
-        localdb.DBController.registrarAccion(AccionSistema.ERROR.name, "No se pudo obtener registros de encabezado y detalle. [Transformation.py | lecturaDataScrapping]")
+        localdb.DBController.registrarAccion(AccionSistema.ERROR.name, "No se pudo obtener registros de encabezado y detalle. [Transformation.py | lecturaDataScrapping]. " + strError)
         exit()
 
     return (dfEncabezadoRegistros, dfDetalleRegistros)
@@ -458,20 +458,15 @@ def transformarCampos(dfTransformacion):
 
 # Inserta un nuevo registro en la tabla limpiezalog
 def registarNuevaLimpieza():
-    # Query para insercion de nuevo registro
-    strQuery = "INSERT INTO limpiezalog(CantidadRegistros) VALUES (0) RETURNING idlimpiezalog"
-
-    # Conexion a base de datos
-    engine = create_engine('postgresql://postgres:150592@localhost:5432/DBApartamentos')
     
-    con = engine.connect()
+    idloglimpieza, strError = localdb.DBController.registrarLogLimpieza()
+    
+    if(idloglimpieza is None):
+        # Registro de accion
+        localdb.DBController.registrarAccion(AccionSistema.ERROR.name, "No se pudo registrar un nuevo registro de limpieza. [Transformation.py | lecturaDataScrapping] " + strError)
+        exit()
 
-    # Ejecucion de query
-    idlimpiezalog = con.execute(strQuery)
-
-    con.close()
-
-    return(idlimpiezalog.fetchone()[0])
+    return idloglimpieza
 
 
 # Proceso que se encarga de registrar los datos de limpieza en BD

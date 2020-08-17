@@ -53,6 +53,33 @@ class DBController():
             strError = str(e)
 
         return dfEncabezadoRegistros, dfDetalleRegistros, strError
+
+    # Registra una accion en base de datos
+    @staticmethod
+    def registrarLogLimpieza(dfCampos):
+        
+        strError = None # Mensaje de error
+        strCadenaConexion = DBController.obtenerCadenaConexion() # Cadena de conexion
+        idlimpiezalog = None # Id de registro guardado en log de limpieza
+
+        try:
+            # Conexion a base de datos
+            engine = create_engine(strCadenaConexion)
+            con = engine.connect()
+
+            # Query para insercion de nuevo registro
+            strQuery = "INSERT INTO limpiezalog(CantidadRegistros) VALUES (0) RETURNING idlimpiezalog"
+
+            # Ejecucion de query
+            idlimpiezalog = con.execute(strQuery)
+
+            con.close()
+
+        except Exception as e:
+            strError = str(e)
+
+
+        return idlimpiezalog, strError
     
 
     # Registra una accion en base de datos
