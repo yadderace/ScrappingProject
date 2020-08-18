@@ -21,7 +21,7 @@ class DBController():
 
         return strCadenaConexion
 
-    
+    # Consulta los datos de scrapping
     @staticmethod
     def obtenerDatosScrapping():
         '''
@@ -53,6 +53,7 @@ class DBController():
             strError = str(e)
 
         return dfEncabezadoRegistros, dfDetalleRegistros, strError
+
 
     # Registra una accion en base de datos
     @staticmethod
@@ -86,7 +87,7 @@ class DBController():
 
         return idlimpiezalog, strError
 
-    
+
     # Registra datos de limpieza en la base de datos
     @staticmethod
     def registrarTransformacionDatos(dfCampos, dfLimpiezaData, idlimpiezalog):
@@ -131,6 +132,29 @@ class DBController():
         
         return blnEjecucion, strError
 
+    # Coloca fecha de limpieza a los registros de scrapping
+    @staticmethod
+    def actualizarLimpiezaScrapping():
+        
+        strCadenaConexion = DBController.obtenerCadenaConexion() # Cadena de conexion
+        blnEjecucion = False # Bandera de ejecucion
+        strError = None
+
+        try:
+            # Conexion a base de datos
+            engine = create_engine(strCadenaConexion)
+            
+            # Ejecucion de actualizacion
+            strQuery = "UPDATE encabezadoregistros SET fechalimpieza = now() where fechalimpieza is null"
+            engine.execute(strQuery)
+
+            blnEjecucion = True
+
+        except Exception as e:
+            strError = str(e)
+            blnEjecucion
+
+        return blnEjecucion, strError
 
     # Registra una accion en base de datos
     @staticmethod

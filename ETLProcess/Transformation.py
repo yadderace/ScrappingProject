@@ -499,12 +499,13 @@ def registrarTransformacion(dfTransformacion, idlimpiezalog):
 # Se encarga de ejecutar el script para actualizar los registros que no tienen fecha de limpieza
 def actualizarRegistrosLimpios():
     
-    # Conexion a base de datos
-    engine = create_engine('postgresql://postgres:150592@localhost:5432/DBApartamentos')
-
-    # Ejecucion de actualizacion
-    strQuery = "UPDATE encabezadoregistros SET fechalimpieza = now() where fechalimpieza is null"
-    engine.execute(strQuery)
+    # Insercion de data
+    blnEjecucion, strError = localdb.DBController.actualizarLimpiezaScrapping()
+    
+    if(not blnEjecucion):
+        # Registro de accion
+        localdb.DBController.registrarAccion(AccionSistema.WARNING.name, "No se pudo actualizar la fecha de limpieza de datos. [Transformation.py | actualizarRegistrosLimpios]. " + strError)
+        return False
 
     return True
 
