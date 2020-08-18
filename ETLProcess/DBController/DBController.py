@@ -57,6 +57,11 @@ class DBController():
     # Registra una accion en base de datos
     @staticmethod
     def registrarLogLimpieza(dfCampos):
+        '''
+            Crea un nuevo registro en la table idlimpiezalog. Devuelve el id generado
+
+            Output: ID de registro
+        '''
         
         strError = None # Mensaje de error
         strCadenaConexion = DBController.obtenerCadenaConexion() # Cadena de conexion
@@ -80,7 +85,52 @@ class DBController():
 
 
         return idlimpiezalog, strError
+
     
+    # Registra datos de limpieza en la base de datos
+    @staticmethod
+    def registrarTransformacionDatos(dfCampos, dfLimpiezaData, idlimpiezalog):
+        
+        '''
+            Registra los resultados de limpieza en las tablas de encabezado y detalle.
+
+            Input:
+                dfCampos, registros de campos de los datos limpios
+                dfLimpiezaData, registros de datos limpios
+                idlimpiezalog, ID de log para limpieza
+
+            Output:
+                Bandera de ejecucion exitosa
+        '''
+
+        strCadenaConexion = DBController.obtenerCadenaConexion() # Cadena de conexion
+        blnEjecucion = False # Bandera de ejecucion
+        strError = None
+        
+        try:
+            # Conexion a base de datos
+            engine = create_engine(strCadenaConexion)
+            
+            # Registrando los datos en limpiezadetalle
+            dfCampos.to_sql('limpiezadetalle', index = False, if_exists = 'append', con = engine)
+
+            # Registrando los datos en limpiezadata
+            dfLimpiezaData.to_sql('limpiezadata', index = False, if_exists = 'append', con = engine)
+
+            # Actualizando la tabla principal de limpieza para registros
+            strQuery = "UPDATE limpiezalog SET cantidadregistros = " + str(len(dfTransformacion.index)) + " where idlimpiezalog = " + str(idlimpiezalog)
+            
+            engine.execute(strQuery)
+
+            blnEjecucion = True
+
+        except Exception as e:
+            strError = str(e)
+            blnEjecucion
+
+        
+        return blnEjecucion, strError
+
 
     # Registra una accion en base de datos
     @staticmethod

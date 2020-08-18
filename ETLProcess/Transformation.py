@@ -463,7 +463,7 @@ def registarNuevaLimpieza():
     
     if(idloglimpieza is None):
         # Registro de accion
-        localdb.DBController.registrarAccion(AccionSistema.ERROR.name, "No se pudo registrar un nuevo registro de limpieza. [Transformation.py | lecturaDataScrapping] " + strError)
+        localdb.DBController.registrarAccion(AccionSistema.ERROR.name, "No se pudo registrar un nuevo registro de limpieza. [Transformation.py | registarNuevaLimpieza] " + strError)
         exit()
 
     return idloglimpieza
@@ -472,33 +472,27 @@ def registarNuevaLimpieza():
 # Proceso que se encarga de registrar los datos de limpieza en BD
 def registrarTransformacion(dfTransformacion, idlimpiezalog):
     
-    # Conexion a base de datos
-    engine = create_engine('postgresql://postgres:150592@localhost:5432/DBApartamentos')
-    
     # Eliminamos registros duplicados para el mismo idregistro para la misma fecha de registro.
     dfTransformacion = dfTransformacion.drop_duplicates(subset = ['idregistro', 'fecharegistro'], keep = 'last')
 
     # Obtenemos el dataframe de campos
     dfCampos = transformarCampos(dfTransformacion)
-
     # Agregando el campo de idlimpiezalog
     dfCampos['idlimpiezalog'] = idlimpiezalog
 
-    # Registrando los datos en limpiezadetalle
-    dfCampos.to_sql('limpiezadetalle', index = False, if_exists = 'append', con = engine)
 
     # Trasladando columnas a registros
     dfLimpiezaData = dfTransformacion.melt(id_vars = 'codigoencabezado', var_name = 'nombrecampo', value_name = 'valordata')
-
     # Agregando la nueva columna de idlimpiezalog
     dfLimpiezaData['idlimpiezalog'] = idlimpiezalog
 
-    # Registrando los datos en limpiezadata
-    dfLimpiezaData.to_sql('limpiezadata', index = False, if_exists = 'append', con = engine)
-
-    # Actualizando la tabla principal de limpieza para registros
-    strQuery = "UPDATE limpiezalog SET cantidadregistros = " + str(len(dfTransformacion.index)) + " where idlimpiezalog = " + str(idlimpiezalog)
-    engine.execute(strQuery)
+    # Insercion de data
+    blnEjecucion, strError = localdb.DBController.registrarTransformacionDatos(dfCampos, dfLimpiezaData, idlimpiezalog)
+    
+    if(not blnEjecucion):
+        # Registro de accion
+        localdb.DBController.registrarAccion(AccionSistema.WARNING.name, "No se pudo registrar los datos de limpieza. [Transformation.py | registrarTransformacion]. " + strError)
+        return False
 
     return True
 
