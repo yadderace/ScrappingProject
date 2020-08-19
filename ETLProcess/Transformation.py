@@ -4,8 +4,8 @@ import ast
 import pandas as pd
 import numpy as np
 import DBController.DBController as localdb
-import DBController.AccionSistema as AccionSistema
 
+from DBController.AccionSistema import AccionSistema
 from sqlalchemy import create_engine
 
 # Lectura de datos sin limpieza en base de datos
@@ -16,7 +16,7 @@ def lecturaDataScrapping():
     if(dfEncabezadoRegistros is None or dfDetalleRegistros is None):
         # Registro de accion
         localdb.DBController.registrarAccion(AccionSistema.ERROR.name, "No se pudo obtener registros de encabezado y detalle. [Transformation.py | lecturaDataScrapping]. " + strError)
-        exit()
+        return None, None
 
     return (dfEncabezadoRegistros, dfDetalleRegistros)
 
@@ -464,7 +464,7 @@ def registarNuevaLimpieza():
     if(idloglimpieza is None):
         # Registro de accion
         localdb.DBController.registrarAccion(AccionSistema.ERROR.name, "No se pudo registrar un nuevo registro de limpieza. [Transformation.py | registarNuevaLimpieza] " + strError)
-        exit()
+        return None
 
     return idloglimpieza
 
@@ -487,7 +487,7 @@ def registrarTransformacion(dfTransformacion, idlimpiezalog):
     dfLimpiezaData['idlimpiezalog'] = idlimpiezalog
 
     # Insercion de data
-    blnEjecucion, strError = localdb.DBController.registrarTransformacionDatos(dfCampos, dfLimpiezaData, idlimpiezalog)
+    blnEjecucion, strError = localdb.DBController.registrarTransformacionDatos(dfCampos, dfLimpiezaData, idlimpiezalog, len(dfTransformacion.index))
     
     if(not blnEjecucion):
         # Registro de accion
@@ -514,33 +514,36 @@ def mainProcess():
     # Obteniendo encabezado y detalle
     dfEnc, dfDet = lecturaDataScrapping()
 
-    if(len(dfEnc.index) == 0  | len(dfDet.index) == 0):
-        print("La data de scrapping no tiene registros")
+    if(dfEnc is None | dfDet is None | len(dfEnc.index) == 0  | len(dfDet.index) == 0):
+        localdb.DBController.registrarAccion(AccionSistema.ERROR.name, "Proceso de limpieza insatisfactorio. [Transformation.py | mainProcess]. lecturaDataScrapping")
         exit()
 
     # Proceso que se encarga de transformar los campos
     dfTransformacion = transformarData(dfEnc, dfDet)
 
     if(len(dfTransformacion.index) == 0):
-        print("La data de transformacion no tiene registros")
+        localdb.DBController.registrarAccion(AccionSistema.ERROR.name, "Proceso de limpieza insatisfactorio. [Transformation.py | mainProcess]. TransformacionData")
+        exit()
 
     # Creamos un registro para nueva limpieza y obtenemos el codigo con que registro esa data.
     idLimpiezaLog = registarNuevaLimpieza()
 
-    if(idLimpiezaLog <= 0):
-        print("No se pudo obtener id para log de limpieza")
+    if(idLimpiezaLog is None):
+        localdb.DBController.registrarAccion(AccionSistema.ERROR.name, "Proceso de limpieza insatisfactorio. [Transformation.py | mainProcess]. RegistroLimpieza")
+        exit()
 
     # Se registra la transformacion de los datos
-    if(registrarTransformacion(dfTransformacion, idLimpiezaLog) == True):
-        
-        # Actualizamos aquellos registros que ya fueron limpiados
-        actualizarRegistrosLimpios()
+    if(registrarTransformacion(dfTransformacion, idlimpiezalog) == False):
+        localdb.DBController.registrarAccion(AccionSistema.ERROR.name, "No se completo el reigstro de transformacion. [Transformation.py | mainProcess]. RegistrarTransformacion")
+        exit()
+    
 
-        print("Registro de transformacion completada")
-        
-
-    else:
-        print("No se completo el registro de transformacion")
-
+    # Actualizamos aquellos registros que ya fueron limpiados
+    if(actualizarRegistrosLimpios() == False):
+        localdb.DBController.registrarAccion(AccionSistema.ERROR.name, "No se ejecuto la actualizacion de registros scrapeados. [Transformation.py | mainProcess]. ActualizarRegistrosLimpios")
+        exit()
+    
+    localdb.DBController.registrarAccion(AccionSistema.DATA_CLEANING.name, "Ejecucion de limpieza y transformacion completado. [Transformation.py | mainProcess].")
+    
 mainProcess()
 

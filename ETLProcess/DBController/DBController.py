@@ -1,4 +1,5 @@
 import os
+import pandas as pd
 from sqlalchemy import create_engine
 
 class DBController():
@@ -21,6 +22,35 @@ class DBController():
 
         return strCadenaConexion
 
+    # Registra una accion en base de datos
+    @staticmethod
+    def registrarAccion(enumAccionSistema, strDescripcionAccion):
+        
+        con = None # Conexion
+        blnEjecucion = False # Bandera de ejecucion de SQL
+        strError = None # Mensaje de error
+        strCadenaConexion = DBController.obtenerCadenaConexion() # Cadena de conexion
+
+        try:
+            # Conexion a base de datos
+            engine = create_engine(strCadenaConexion)
+            con = engine.connect()
+        
+            strQuery = "INSERT INTO logaccionessistema(nombreaccion, descripcionaccion) VALUES (%(nombreaccion)s, %(descripcionaccion)s)"
+            con.execute(strQuery, nombreaccion = enumAccionSistema, descripcionaccion = strDescripcionAccion)
+
+            blnEjecucion = True
+
+        except Exception as e:
+            strError = str(e)
+            blnEjecucion = False
+
+        finally:
+            if(con is not None):
+                con.close()
+
+        return blnEjecucion, strError
+    
     # Consulta los datos de scrapping
     @staticmethod
     def obtenerDatosScrapping():
@@ -57,7 +87,7 @@ class DBController():
 
     # Registra una accion en base de datos
     @staticmethod
-    def registrarLogLimpieza(dfCampos):
+    def registrarLogLimpieza():
         '''
             Crea un nuevo registro en la table idlimpiezalog. Devuelve el id generado
 
@@ -77,7 +107,7 @@ class DBController():
             strQuery = "INSERT INTO limpiezalog(CantidadRegistros) VALUES (0) RETURNING idlimpiezalog"
 
             # Ejecucion de query
-            idlimpiezalog = con.execute(strQuery)
+            idlimpiezalog = con.execute(strQuery).fetchone()[0]
 
             con.close()
 
@@ -90,7 +120,7 @@ class DBController():
 
     # Registra datos de limpieza en la base de datos
     @staticmethod
-    def registrarTransformacionDatos(dfCampos, dfLimpiezaData, idlimpiezalog):
+    def registrarTransformacionDatos(dfCampos, dfLimpiezaData, idlimpiezalog, intCantidadRegistros):
         
         '''
             Registra los resultados de limpieza en las tablas de encabezado y detalle.
@@ -119,7 +149,7 @@ class DBController():
             dfLimpiezaData.to_sql('limpiezadata', index = False, if_exists = 'append', con = engine)
 
             # Actualizando la tabla principal de limpieza para registros
-            strQuery = "UPDATE limpiezalog SET cantidadregistros = " + str(len(dfTransformacion.index)) + " where idlimpiezalog = " + str(idlimpiezalog)
+            strQuery = "UPDATE limpiezalog SET cantidadregistros = " + str(intCantidadRegistros) + " where idlimpiezalog = " + str(idlimpiezalog)
             
             engine.execute(strQuery)
 
@@ -178,7 +208,6 @@ class DBController():
 
 
         return blnEjecucion, strError
-
 
     # Registra en tabla  modeloencabezado la construccion de un nuevo modelo
     @staticmethod
