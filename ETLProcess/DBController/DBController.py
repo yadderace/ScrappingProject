@@ -268,6 +268,7 @@ class DBController():
     ###########################################################################################
     # Funciones ModelConstruction.py
 
+    # Consulta datos en vista de datos limpios
     @staticmethod
     def obtenerDatosLimpios(dateFechaInicial, dateFechaFinal):
         '''
@@ -301,3 +302,49 @@ class DBController():
 
         return dfRegistros, strError
     
+
+    # Crea un registro de modelo kmeans creado
+    @staticmethod
+    def registrarModeloKMeans(strTipoModelo, strFileNameKM):
+
+        con = None # Conexion
+        tran = None # Transaction
+        blnEjecucion = False # Bandera de ejecucion de SQL
+        strError = None # Mensaje de error
+        strCadenaConexion = DBController.obtenerCadenaConexion() # Cadena de conexion
+        idmodelo = None # Id del modelo registrado
+
+        try:
+
+            # Conexion a base de datos
+            engine = create_engine(strCadenaConexion)
+            con = engine.connect()
+            tran = con.begin()
+
+            # Query para insercion de nuevo registro
+            strQuery = "INSERT INTO modeloencabezado(tipomodelo, archivomodelo, msescore, r2score) VALUES (%(tipomodelo)s, %(archivomodelo)s, %(msescore)s, %(r2score)s) RETURNING idmodelo"
+            idmodelo = con.execute(strQuery, tipomodelo = strTipoModelo, archivomodelo = strFileNameKM, msescore = 0.0, r2score = 0.0).fetchone()[0]
+
+            # Ejecutamos actualizacion en de modelos
+            strQuery = "UPDATE modeloencabezado SET active = false WHERE tipomodelo in ('KM')"
+            con.execute(strQuery)
+
+            # Actualizamos el modelo activo
+            strQuery = "UPDATE modeloencabezado SET active = true WHERE idmodelo = %(idModelo)s"
+            con.execute(strQuery, idModelo = idmodelo)
+
+            tran.commit()
+
+            blnEjecucion = True
+
+
+        except Exception as e:
+            strError = str(e)
+            blnEjecucion = False
+            tran.rollback()
+
+        finally:
+            if(con is not None):
+                con.close()
+
+        return idmodelo, strError

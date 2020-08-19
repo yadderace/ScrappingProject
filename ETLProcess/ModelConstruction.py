@@ -85,23 +85,14 @@ def registrarModeloKMean(kmModelo):
     # Escribir modelo
     pickle.dump(kmModelo, open(directorioModelo + strFileNameKM, 'wb'))
 
-    # Conexion a base de datos
-    engine = create_engine('postgresql://postgres:150592@localhost:5432/DBApartamentos')
-    con = engine.connect()
-    
-    # Query para insercion de nuevo registro
-    strQuery = "INSERT INTO modeloencabezado(tipomodelo, archivomodelo, msescore, r2score) VALUES (%(tipomodelo)s, %(archivomodelo)s, %(msescore)s, %(r2score)s) RETURNING idmodelo"
-    idmodelo = con.execute(strQuery, tipomodelo = strTipoModelo, archivomodelo = strFileNameKM, msescore = 0.0, r2score = 0.0).fetchone()[0]
-    
-    # Ejecutamos actualizacion en de modelos
-    strQuery = "UPDATE modeloencabezado SET active = false WHERE tipomodelo in ('KM')"
-    con.execute(strQuery)
+    # Registro en bd
+    idmodelo, strError = localdb.DBController.registrarModeloKMeans(strTipoModelo, strFileNameKM)
 
-    # Actualizamos el modelo activo
-    strQuery = "UPDATE modeloencabezado SET active = true WHERE idmodelo = %(idModelo)s"
-    con.execute(strQuery, idModelo = idmodelo)
-    
-    con.close()
+    if(idmodelo is None):
+        localdb.registrarAccion(AccionSistema.WARNING.name, "No se pudo registrar un nuevo modelo KMeans. [ModelConstruction.py | registrarModeloKMean]. " + strError)
+        return None
+
+    return idmodelo
 
 
 # Se genera un modelo kmeans para la ubicacion de latitud y longitud
@@ -130,8 +121,10 @@ def generarModeloUbicacion(dfSetDatos, intClusters, intFrecMin):
     kmeanModelFinal = KMeans(init = npCentroids, 
                         n_clusters = len(dfCategorias.index), 
                         max_iter = 2000).fit(dfSetDatos[['longitud', 'latitud']]) 
-    registrarModeloKMean(kmeanModelFinal)
-
+    
+    # Registro de modelo en BD
+    idmodelo = registrarModeloKMean(kmeanModelFinal)
+    
     # Creamos la columna ubicacion
     dfSetDatos['ubicacion'] = ["U" + str(categoria) for categoria in kmeanModelFinal.labels_]
     
