@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 import DBController.DBController as localdb
 
+from DBController.AccionSistema import AccionSistema
 from datetime import date, timedelta
 from sqlalchemy import create_engine
 from sklearn.cluster import KMeans
@@ -18,16 +19,12 @@ from sklearn.metrics import mean_squared_error, r2_score
 # Lectura de los datos limpios en BD
 def lecturaDataLimpia(dateFechaInicial, dateFechaFinal):
     
-    engine = create_engine('postgresql://postgres:150592@localhost:5432/DBApartamentos')
-
-    strQuery = 'select * from mvwSetLimpio where  fecharegistro between %(fechaInicial)s and %(fechaFinal)s'
+    dfRegistros, strError = localdb.DBController.obtenerDatosLimpios(dateFechaInicial, dateFechaFinal)
     
-    # Leyendo de base de datos especificando el query y los parametros de fecha.
-    dfRegistros = pd.read_sql_query(strQuery, 
-        params = {
-            'fechaInicial': dateFechaInicial, 
-            'fechaFinal': dateFechaFinal}, coerce_float = False, con=engine)
-
+    if(dfRegistros is None):
+        localdb.registrarAccion(AccionSistema.ERROR.name, "No se pudo obtener registros limpios para construccion de modelo. [ModelConstruction.py | lecturaDataLimpia]. " + strError)
+        return None
+    
     return dfRegistros
 
 # Funcion encargada de obtener solo los ultimos registros para cada idregistro
@@ -412,11 +409,16 @@ def construirModelos(dfSetModelo):
 
 
 def main():
+    
+    # Especifianco rango de fechas a tomar en cuenta para la construccion del modelo
     dateFechaActual = date.today()
     dateFechaAnterior = dateFechaActual - timedelta(days= 60)
 
     # Lectura en base de datos de los registros candidatos para la construccion del modelo
     dfSetLimpio = lecturaDataLimpia(dateFechaAnterior, dateFechaActual)
+    if(dfSetLimpio is None):
+        localdb.registrarAccion(AccionSistema.ERROR.name, "Proceso de construccion de modelo INCOMPLETO. [ModelConstruction.py | main]. ")
+        exit()
 
     # Tranformacion de los datos a utilizar para el modelo
     dfSetModelo = transformarDatosModelo(dfSetLimpio)

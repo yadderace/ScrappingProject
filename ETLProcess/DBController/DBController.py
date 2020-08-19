@@ -51,6 +51,9 @@ class DBController():
 
         return blnEjecucion, strError
     
+    ###########################################################################################
+    # Funciones Transformation.py
+
     # Consulta los datos de scrapping
     @staticmethod
     def obtenerDatosScrapping():
@@ -262,4 +265,39 @@ class DBController():
 
         return blnEjecucion, strError
 
+    ###########################################################################################
+    # Funciones ModelConstruction.py
+
+    @staticmethod
+    def obtenerDatosLimpios(dateFechaInicial, dateFechaFinal):
+        '''
+            Se consulta a la vista de datos limpios para obtener aquellos registros
+            que se encuentran dentro del rango de fechas establecidos por los parametros
+
+            Input: 
+                dateFechaInicial: Fecha Inicial de busqueda
+                dateFechaFinal: Fecha Final de busqueda
+
+            Output: Dataframes de registros
+        '''
+        dfRegistros = None # Registros limpios
+        strError = None # Mensaje de error
+        strCadenaConexion = DBController.obtenerCadenaConexion() # Cadena de conexion
+
+        try:
+            engine = create_engine(strCadenaConexion)
+
+            # Consulta a vista de datos limpios
+            strQuery = 'SELECT * FROM mvwSetLimpio WHERE fecharegistro BETWEEN %(fechaInicial)s AND %(fechaFinal)s'
+    
+            # Leyendo de base de datos especificando el query y los parametros de fecha.
+            dfRegistros = pd.read_sql_query(strQuery, 
+                params = {
+                    'fechaInicial': dateFechaInicial, 
+                    'fechaFinal': dateFechaFinal}, coerce_float = False, con=engine)
+
+        except Exception as e:
+            strError = str(e)
+
+        return dfRegistros, strError
     
