@@ -514,7 +514,7 @@ def mainProcess():
     # Obteniendo encabezado y detalle
     dfEnc, dfDet = lecturaDataScrapping()
 
-    if(dfEnc is None | dfDet is None | len(dfEnc.index) == 0  | len(dfDet.index) == 0):
+    if(dfEnc is None or dfDet is None or len(dfEnc.index) == 0  or len(dfDet.index) == 0):
         localdb.DBController.registrarAccion(AccionSistema.ERROR.name, "Proceso de limpieza insatisfactorio. [Transformation.py | mainProcess]. lecturaDataScrapping")
         exit()
 
