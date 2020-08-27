@@ -533,7 +533,7 @@ def mainProcess():
         exit()
 
     # Se registra la transformacion de los datos
-    if(registrarTransformacion(dfTransformacion, idlimpiezalog) == False):
+    if(registrarTransformacion(dfTransformacion, idLimpiezaLog) == False):
         localdb.DBController.registrarAccion(AccionSistema.ERROR.name, "No se completo el reigstro de transformacion. [Transformation.py | mainProcess]. RegistrarTransformacion")
         exit()
     
