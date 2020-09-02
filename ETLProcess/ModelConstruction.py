@@ -2,6 +2,7 @@ import os
 import re
 import pickle
 import datetime
+import math
 import pandas as pd
 import numpy as np
 import DBController.DBController as localdb
@@ -418,6 +419,112 @@ def main():
 
     # Construimos los modelos y guardamos sus datos
     construirModelos(dfSetModelo)
+
+
+import requests
+import json
+
+def mainResultados():
+    
+    listaFechas = ['18/07/20', '25/07/20', '01/08/20', '08/08/20', '15/08/20', '22/08/20']
+
+    for fecha in listaFechas:
+
+        dateFecha = datetime.datetime.strptime(fecha, '%d/%m/%y')
+
+        dateFechaAnterior = dateFecha - timedelta(days = 30)
+
+        print ("Fecha I. Entrenamiento:" + str(dateFechaAnterior))
+        print ("Fecha F. Entrenamiento:" + str(dateFecha))
+
+        # Lectura en base de datos de los registros candidatos para la construccion del modelo
+        dfSetLimpio = lecturaDataLimpia(dateFechaAnterior, dateFecha)
+        #print(dfSetLimpio)
+        
+        if(dfSetLimpio is None):
+            localdb.registrarAccion(AccionSistema.ERROR.name, "Proceso de construccion de modelo INCOMPLETO. [ModelConstruction.py | main]. ")
+            exit()
+
+        # Tranformacion de los datos a utilizar para el modelo
+        dfSetModelo = transformarDatosModelo(dfSetLimpio)
+        
+        print ("Entrenamiento: " + str(len(dfSetModelo.index)))
+
+        # Construimos los modelos y guardamos sus datos
+        construirModelos(dfSetModelo)
+
+
+        dateFechaSiguiente = dateFecha + timedelta(days = 1)
+        dateFechaPosterior = dateFecha + timedelta(days = 14)
+
+        print ("Fecha I. Prueba:" + str(dateFechaSiguiente))
+        print ("Fecha F. Prueba:" + str(dateFechaPosterior))
+
+        dfSetLimpio = lecturaDataLimpia(dateFechaSiguiente, dateFechaPosterior)
+        
+        # Se obtienen los registros unicos (eliminar duplicados)
+        dfSetLimpio = obtenerRegistrosUnicos(dfSetLimpio)
+
+        # Se calcula una columna de precio real (quetzales)
+        dfSetLimpio = obtenerPrecioReal(dfSetLimpio)
+
+        # Se calcula una columna para ver si la oferta es de Venta o Alquiler
+        dfSetLimpio = obtenerOferta(dfSetLimpio)
+
+        # Se filtran solo los registros necesarios para la construccion del modelo
+        # Tambien se filtran las columnas a ser consideradas para la construccion.
+        dfSetFiltrado = filtrarRegistros(dfSetLimpio)
+
+        # Eliminamos valores nulos
+        dfSetFiltrado = eliminarValoresNulos(dfSetFiltrado, dfSetLimpio)
+
+
+        # Eliminamos variables dummy si ya existen
+        dfSetFiltrado = dfSetFiltrado.drop(['monedaq','monedad', 'tipoinmobiliaria', 'tipodueno'], axis=1, errors='ignore')
+
+        # Convertimos aquellas variables categoricas a variables dummy.
+        dfSetFiltrado = pd.concat([dfSetFiltrado, pd.get_dummies(dfSetFiltrado['moneda'])\
+                                    .rename(columns={'Q': 'monedaq', 'US$': 'monedad'})], axis = 1)
+
+        dfSetFiltrado = pd.concat([dfSetFiltrado, pd.get_dummies(dfSetFiltrado['tipovendedor'])\
+                                    .rename(columns={1: 'tipoinmobiliaria', 
+                                                    0: 'tipodueno'})], axis = 1)
+        
+
+        precio_real = dfSetFiltrado['precioreal']
+        dfSetFiltrado =dfSetFiltrado[['espacio_m2', 'banos', 'habitaciones', 'monedaq', 'monedad' , 'parqueo', 'tipoinmobiliaria', 'tipodueno', 'longitud', 'latitud']]
+
+
+        if (len(dfSetFiltrado.index) > 0):
+
+            precios_predict = []
+            
+            for index, registro in dfSetFiltrado.iterrows():
+
+                rJson = [registro.to_dict()]
+                r = requests.post('http://127.0.0.1:5000/predict',json = rJson)
+
+                precios_predict.append(float(r.text))
+
+            # Calculo de metricas
+            mseRandomForestModel = math.sqrt(mean_squared_error(precio_real, precios_predict))
+            r2RandomForestModel = r2_score(precio_real, precios_predict)
+            
+            EPSILON = 1e-10
+
+            # Calculo RAE
+            actual = np.array(precio_real)
+            predicted = np.array(precios_predict)
+            rae = np.sum(np.abs(actual - predicted)) / (np.sum(np.abs(actual - np.mean(actual))) + EPSILON)
+
+            print ("Registros Prueba:" + str(len(precios_predict)))
+            print ("RMSE: " + str(mseRandomForestModel))
+            print ("RAE: " + str(rae))
+            print ("R2: " + str(r2RandomForestModel))
+            print ("===================================================")
+
+                
+
 
 
 if __name__ == "__main__":
