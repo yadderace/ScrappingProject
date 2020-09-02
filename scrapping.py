@@ -7,6 +7,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
 from DataBaseOp import DataBaseOp
@@ -230,7 +231,10 @@ def obtenerRegistros(intCantidadLimite, registros):
 # debe dar al boton CARGAR MAS de la pagina.
 def obtenerFuentePagina(pTimeout, pNumeroClics):
     
-    driver = webdriver.Chrome()
+    chrome_options = Options()
+    chrome_options.add_argument('--headless')
+
+    driver = webdriver.Chrome(options=chrome_options)
     driver.get(urlPeticion)
     driver.implicitly_wait(pTimeout)
 
@@ -269,13 +273,13 @@ def obtenerFuentePagina(pTimeout, pNumeroClics):
 
 # URL donde se obtendra el listado de apartamentos
 #urlApartamentos = "/ciudad-de-guatemala_g4168811/q-apartamentos"
-#urlApartamentos = "/items/q-apartamentos-villa-nueva"
-urlApartamentos = "/items/q-apartamentos-zona-12"
+urlApartamentos = "/items/q-apartamentos-villa-nueva"
+#urlApartamentos = "/items/q-apartamentos-zona-12"
 urlPeticion = urlBase + urlApartamentos
 
 def main():
-    intNumeroClics = 9
-    intTimeout = 30
+    intNumeroClics = 15
+    intTimeout = 15
     intCantidadLimiteRegistros = 500
     intRegistosPorPagina = 10
     intRegistroMin = 0
