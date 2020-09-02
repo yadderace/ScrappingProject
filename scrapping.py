@@ -234,7 +234,7 @@ def obtenerFuentePagina(pTimeout, pNumeroClics):
     chrome_options = Options()
     chrome_options.add_argument('--headless')
 
-    driver = webdriver.Chrome(options=chrome_options)
+    driver = webdriver.Chrome(options=chrome_options, executable_path = './chromedriver')
     driver.get(urlPeticion)
     driver.implicitly_wait(pTimeout)
 
