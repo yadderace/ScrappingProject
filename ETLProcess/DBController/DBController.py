@@ -348,3 +348,66 @@ class DBController():
                 con.close()
 
         return idmodelo, strError
+
+    ###########################################################################################
+    # Funciones Scrapping.py
+
+    # Registra los datos de scrapping
+    @staticmethod
+    def registrarDatosScrapping(listaRegistros):
+        
+        intRegistrosIngresados = 0 # Cantidad de registros ingresados
+        strCadenaConexion = DBController.obtenerCadenaConexion() # Cadena de conexion
+        tran = None
+
+        
+        # Recorremos cada registro
+        for registro in listaRegistros:
+
+            try:
+                # Conexion a base de datos
+                engine = create_engine(strCadenaConexion)
+                con = engine.connect()
+                tran = con.begin()
+
+
+                # Obtenemos los valores a insertar en encabezado
+                intIdRegistro = registro.id
+                strLinkPagina = registro.linkPagina
+                listaAtributos = registro.atributos
+
+                # Query para insercion de nuevo registro
+                strQuery = "INSERT INTO encabezadoregistros(idregistro, linkpagina) VALUES (%(idregistro)s, %(linkpgina)s) RETURNING CodigoEncabezado"
+                intCodigoEncabezado = con.execute(strQuery, idregistro = intIdRegistro, linkpagina = strLinkPagina).fetchone()[0]
+
+                # Recorremos cada detalle
+                for registroDetalle in listaAtributos:
+
+                    strCampo = registroDetalle.campo
+                    strValor = registroDetalle.valor
+                    strValorJSON = None
+
+                    # Si el campo es JSON lo guardamos en otra columna
+                    if(strCampo == "JSON"):
+                        strValorJSON = strValor
+                        strValor = None
+
+                     # Query para insercion de nuevo registro
+                    strQuery = "INSERT INTO public.DetalleRegistros(CodigoEncabezado, NombreCampo, ValorCampo, ValorJSON) VALUES (%(codigoencabezado)s, %(nombrecampo)s, %(valorcampo)s, %(valorjson)s)"
+                    con.execute(strQuery, codigoencabezado = intCodigoEncabezado, nombrecampo = strCampo, valorcampo = strValor, valorjson = strValorJSON)
+
+                
+                tran.commit()
+                intRegistrosIngresados += 1
+
+            except Exception as e:
+                
+                strError = e
+                tran.rollback()
+            
+
+            finally:
+                if(con is not None):
+                    con.close()
+
+        return (intRegistrosIngresados)

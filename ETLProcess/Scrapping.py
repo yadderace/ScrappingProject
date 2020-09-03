@@ -2,6 +2,8 @@ import requests
 import re
 import json
 import math
+import DBController.DBController as localdb
+
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -316,7 +318,7 @@ def main():
             # Se verifica si se obtuvieron registros de respuesta para procesarlos a base de datos
             if(len(listaRegistrosEncontrados) > 0):
                 print("La cantidad de registros obtenidos: " + str(len(listaRegistrosEncontrados)))
-                DataBaseOp.RegistrarDatos(listaRegistrosEncontrados)
+                localdb.registrarDatosScrapping(listaRegistrosEncontrados)
 
             else:
                 print("No se obtuvieron registros")
