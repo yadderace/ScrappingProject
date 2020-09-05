@@ -126,3 +126,38 @@ CREATE TABLE public.logaccionessistema
     descripcionaccion text,
     fechaaccion timestamp without time zone DEFAULT now() 
 )
+
+
+CREATE TABLE public.urlscrapping
+(
+    idurlscrapping bigint NOT NULL GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 9223372036854775807 CACHE 1 ),
+    urlscrapping character varying (200) NOT NULL,
+    numeroclics smallint NOT NULL,
+    cantidadlimiteregistros int NOT NULL,
+    registrosxpagina smallint NOT NULL,
+    registrosmin smallint NOT NULL,
+	intentosmax smallint NOT NULL,
+    urlactivo bool NOT NULL,
+    fecharegistro timestamp without time zone DEFAULT now(),
+    CONSTRAINT urlscrapping_pkey PRIMARY KEY (idurlscrapping)
+)
+
+INSERT INTO urlscrapping(urlscrapping, numeroclics, cantidadlimiteregistros, registrosxpagina, registrosmin, intentosmax, urlactivo)
+VALUES ('https://www.olx.com.gt/ciudad-de-guatemala_g4168811/q-apartamentos', 30, 500, 10, 0, 15, true),
+		('https://www.olx.com.gt/items/q-apartamentos-villa-nueva', 10, 500, 10, 0, 10, true),
+		('https://www.olx.com.gt/items/q-apartamentos-zona-12', 15, 500, 10, 0, 10, true)
+
+
+CREATE TABLE public.logcrapping
+(
+    idurlscrapping bigint NOT NULL,
+	fechascrapping timestamp without time zone NOT NULL,
+    cantidadintentos smallint NOT NULL,
+    cantidadregistros smallint NOT NULL,
+	fecharegistro timestamp without time zone DEFAULT now(),
+    CONSTRAINT logcrapping_pkey PRIMARY KEY (idurlscrapping, fechascrapping)
+)
+
+
+
+CREATE TABLE public.logscrapping
