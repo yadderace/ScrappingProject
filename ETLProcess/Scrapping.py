@@ -13,6 +13,15 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
 
+# Texto del boton de carga
+strTextoBoton = "CARGAR MÁS"
+
+# Url de pagina web
+urlBase = "https://www.olx.com.gt"
+
+# Creacion de header para peticion
+headers = {'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.143 Safari/537.36'}
+
 
 
 ##################################################################################
@@ -263,8 +272,8 @@ def obtenerFuentePagina(pTimeout, pNumeroClics):
 # MAIN
 
 # URL donde se obtendra el listado de apartamentos
-#urlApartamentos = "/ciudad-de-guatemala_g4168811/q-apartamentos"
-urlApartamentos = "/items/q-apartamentos-villa-nueva"
+urlApartamentos = "/ciudad-de-guatemala_g4168811/q-apartamentos"
+#urlApartamentos = "/items/q-apartamentos-villa-nueva"
 #urlApartamentos = "/items/q-apartamentos-zona-12"
 urlPeticion = urlBase + urlApartamentos
 
@@ -318,7 +327,7 @@ def main():
             # Se verifica si se obtuvieron registros de respuesta para procesarlos a base de datos
             if(len(listaRegistrosEncontrados) > 0):
                 print("La cantidad de registros obtenidos: " + str(len(listaRegistrosEncontrados)))
-                localdb.registrarDatosScrapping(listaRegistrosEncontrados)
+                localdb.DBController.registrarDatosScrapping(listaRegistrosEncontrados)
 
             else:
                 print("No se obtuvieron registros")
