@@ -79,7 +79,7 @@ class DBController():
                                                         ' where codigoencabezado in (' + 
                                                             ' select distinct codigoencabezado ' +
                                                             ' from encabezadoregistros' +
-                                                            ' where fechalimpieza is null'
+                                                            ' where fechalimpieza is null' +
                                                         ')',con=engine)
 
         except Exception as e:
@@ -351,6 +351,45 @@ class DBController():
 
     ###########################################################################################
     # Funciones Scrapping.py
+
+    # Obtiene los URL para realizar scrapping si no hay registros en el log
+    @staticmethod
+    def obtenerUrlScrapping(dateFechaScrapping):
+        '''
+        Input:
+            dateFechaLog: Fecha de log para scrapping para verificar si la URL debe ser scrapeada
+        Output:
+            DataFrame con los registros de urls
+        '''
+
+        dfRegistros = None # Registros limpios
+        strError = None # Mensaje de error
+        strCadenaConexion = DBController.obtenerCadenaConexion() # Cadena de conexion
+
+        try:
+            engine = create_engine(strCadenaConexion)
+
+            # Lectura de registros con url por dia
+            strQuery = '''
+                    select us.idurlscrapping, us.urlscrapping, us.numeroclics, us.cantidadlimiteregistros, 
+                        us.registrosxpagina, us.registrosmin, us.intentosmax,  ls.fechascrapping    
+                    from urlscrapping as us   
+                    left join logscrapping as ls  
+	                    on us.idurlscrapping = ls.idurlscrapping  
+	                    and us.idurlscrapping is not null 
+                    where us.urlactivo = true 
+                    and (ls.cantidadintentos is null or (ls.cantidadintentos < us.intentosmax and ls.cantidadregistros = 0))
+                    and (ls.fechascrapping is null or date(ls.fecharegistro) = date( %(fechaScrapping)s )) '''
+    
+            # Leyendo de base de datos especificando el query y los parametros de fecha.
+            dfRegistros = pd.read_sql_query(strQuery, 
+                params = {'fechaScrapping': dateFechaScrapping}, coerce_float = False, con=engine)
+
+        except Exception as e:
+            strError = str(e)
+
+        return dfRegistros, strError
+
 
     # Registra los datos de scrapping
     @staticmethod

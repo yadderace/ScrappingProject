@@ -4,6 +4,7 @@ import json
 import math
 import DBController.DBController as localdb
 
+from datetime import date
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -230,7 +231,7 @@ def obtenerRegistros(intCantidadLimite, registros):
 
 # Intenta obtener la fuente de la pagina determinada por la cantidad de clics que se le 
 # debe dar al boton CARGAR MAS de la pagina.
-def obtenerFuentePagina(pTimeout, pNumeroClics):
+def obtenerFuentePagina(pTimeout, pNumeroClics, urlPeticion):
     
     chrome_options = Options()
     chrome_options.add_argument('--headless')
@@ -265,74 +266,98 @@ def obtenerFuentePagina(pTimeout, pNumeroClics):
 
     return(strPageSource)
 
+
 # ------------------------------------------------------------------------------------------------------------------
-
-
-#####################################################################################
-# MAIN
-
-# URL donde se obtendra el listado de apartamentos
-urlApartamentos = "/ciudad-de-guatemala_g4168811/q-apartamentos"
-#urlApartamentos = "/items/q-apartamentos-villa-nueva"
-#urlApartamentos = "/items/q-apartamentos-zona-12"
-urlPeticion = urlBase + urlApartamentos
-
-def main():
-    intNumeroClics = 15
-    intTimeout = 15
-    intCantidadLimiteRegistros = 500
-    intRegistosPorPagina = 10
-    intRegistroMin = 0
+# Funcion para ejecutar el proceso de scrapping en una determinada pagina
+def ejecutarScrapping(strUrlPagina, intNumeroClics, intCantidadLimiteRegistros, intRegistosPorPagina, intRegistroMin):
+    
+    intTimeout = 15 # Timeout de 15 segundos
 
     # Obtenemos el html de la pagina web
-    strResultado = obtenerFuentePagina(intTimeout, intNumeroClics)
+    strResultado = obtenerFuentePagina(intTimeout, intNumeroClics, strUrlPagina)
 
     # Verificamos que haya existido resultado
     if(strResultado is None):
-        print("No se pudo obtener informacion de la fuente")
-        exit()
+        return None, "No se pudo obtener informacion de la fuente"
     
     # Utilizamos la libreria SOUP para hacer busqeda sobre la fuente HTML
     soup = BeautifulSoup(strResultado, features="html.parser")
     
     # Buscamos todos los registros de apartamentos haciendo una busqieda por clase de etiqueda li
     registros = soup.find_all('li', {'class' : 'EIR5N'})
+
+    if registros is None:
+        return None, "No se encontraron registros de apartamentos para la clase (EIR5N) mencionada"
+
+    # Establecemos el registro minimo
+    if(intRegistroMin < len(registros) - 1):
+        registros = registros[intRegistroMin:len(registros)]
+
+    # Recortamos los registros a la cantidad limite
+    if(len(registros) > intCantidadLimiteRegistros):
+        registros = registros[0:(intCantidadLimiteRegistros - 1)]
+
+    # Calculamos la cantidad de paginas a utilizar
+    intPaginas = math.ceil(len(registros) / intRegistosPorPagina)
     
-    if registros is not None:
+    # Para devolver la cantidad de registros totales
+    intRegistrosTotales = 0
 
-        # Establecemos el registro minimo
-        if(intRegistroMin < len(registros) - 1):
-            registros = registros[intRegistroMin:len(registros)]
+    for pagina in range(1, intPaginas):
 
-        # Recortamos los registros a la cantidad limite
-        if(len(registros) > intCantidadLimiteRegistros):
-            registros = registros[0:(intCantidadLimiteRegistros - 1)]
+        print("Pagina #" + str(pagina)) 
 
-        # Calculamos la cantidad de paginas a utilizar
-        intPaginas = math.ceil(len(registros) / intRegistosPorPagina)
-        for pagina in range(1, intPaginas):
+        # Se obtienen los limites para obtener los subregistros de pagina
+        intLimiteInicial = (pagina - 1) * intRegistosPorPagina
+        intLimiteFinal = intLimiteInicial + intRegistosPorPagina
+        if(intLimiteFinal > len(registros) - 1):
+            intLimiteFinal = len(registros)
             
-            print("Pagina #" + str(pagina))
+        # Se obtienen los subregistros y se procesan las consultas
+        listaSubRegistros = registros[intLimiteInicial:intLimiteFinal]
+        listaRegistrosEncontrados = obtenerRegistros(intCantidadLimiteRegistros, listaSubRegistros)
 
-            # Se obtienen los limites para obtener los subregistros de pagina
-            intLimiteInicial = (pagina - 1) * intRegistosPorPagina
-            intLimiteFinal = intLimiteInicial + intRegistosPorPagina
-            if(intLimiteFinal > len(registros) - 1):
-                intLimiteFinal = len(registros)
-            
-            # Se obtienen los subregistros y se procesan las consultas
-            listaSubRegistros = registros[intLimiteInicial:intLimiteFinal]
-            listaRegistrosEncontrados = obtenerRegistros(intCantidadLimiteRegistros, listaSubRegistros)
+        # Se verifica si se obtuvieron registros de respuesta para procesarlos a base de datos
+        if(len(listaRegistrosEncontrados) > 0):
+            print("La cantidad de registros obtenidos: " + str(len(listaRegistrosEncontrados)))
+            intRegistrados = localdb.DBController.registrarDatosScrapping(listaRegistrosEncontrados)
 
-            # Se verifica si se obtuvieron registros de respuesta para procesarlos a base de datos
-            if(len(listaRegistrosEncontrados) > 0):
-                print("La cantidad de registros obtenidos: " + str(len(listaRegistrosEncontrados)))
-                localdb.DBController.registrarDatosScrapping(listaRegistrosEncontrados)
+            # Aumentamos el valor de registros totales
+            intRegistrosTotales += intRegistrados
 
-            else:
-                print("No se obtuvieron registros")
+    
+    return intRegistrosTotales, None
 
-    else:
-        print("No se encontraron registros de apartamentos para la clase mencionada (main)")
+def main():
+    
+    # Especificando la fecha actual para realizar scrapping
+    dateFechaActual = date.today()
+
+    dfRegistros, strError = localdb.DBController.obtenerUrlScrapping(dateFechaActual)
+
+    if(dfRegistros is None or len(dfRegistros) == 0):
+        localdb.registrarAccion(AccionSistema.WARNING.name, "No se pudieron obtener los registros de URL para scraping. [Scrapping.py | main]. " + strError)
+        exit()
+
+    # Iteramos por cada registro encontrado de URL
+    for index, registro in dfRegistros.iterrows():
+
+        # Obtenemos valores de cada campo
+        idUrlScrapping = registro['idurlscrapping']
+        strUrlScrapping = registro['urlscrapping']
+        intCantidadLimiteRegistros = registro['cantidadlimiteregistros']
+        intNumeroClics = registro['numeroclics']
+        intRegistrosXPagina = registro['registrosxpagina']
+        intRegistrosMin = registro['registrosmin']
+
+        # Ejecutamos el proceso de scrapping por cada registro de URL.
+        intCantidadRegistros, strError = ejecutarScrapping(strUrlScrapping, intNumeroClics, intCantidadLimiteRegistros, intRegistrosXPagina, intRegistrosMin)
+
+        # Actualizamos los registros
+        if(strError is not None or intCantidadRegistros == 0):
+            intCantidadRegistros = 0
+
+            #TODO: Actualizar registros
+
 
 main()
