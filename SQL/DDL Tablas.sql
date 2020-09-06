@@ -148,7 +148,7 @@ VALUES ('https://www.olx.com.gt/ciudad-de-guatemala_g4168811/q-apartamentos', 30
 		('https://www.olx.com.gt/items/q-apartamentos-zona-12', 15, 500, 10, 0, 10, true)
 
 
-CREATE TABLE public.logcrapping
+CREATE TABLE public.logscrapping
 (
     idurlscrapping bigint NOT NULL,
 	fechascrapping timestamp without time zone NOT NULL,
@@ -157,7 +157,3 @@ CREATE TABLE public.logcrapping
 	fecharegistro timestamp without time zone DEFAULT now(),
     CONSTRAINT logcrapping_pkey PRIMARY KEY (idurlscrapping, fechascrapping)
 )
-
-
-
-CREATE TABLE public.logscrapping
