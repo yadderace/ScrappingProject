@@ -376,7 +376,8 @@ class DBController():
                     from urlscrapping as us   
                     left join logscrapping as ls  
 	                    on us.idurlscrapping = ls.idurlscrapping  
-	                    and us.idurlscrapping is not null 
+	                    and us.idurlscrapping is not null
+						and date(ls.fecharegistro) = date(%(fechaScrapping)s) 
                     where us.urlactivo = true 
                     and (ls.cantidadintentos is null or (ls.cantidadintentos < us.intentosmax and ls.cantidadregistros = 0))
                     and (ls.fechascrapping is null or date(ls.fecharegistro) = date( %(fechaScrapping)s )) '''
