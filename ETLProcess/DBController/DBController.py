@@ -391,6 +391,71 @@ class DBController():
 
         return dfRegistros, strError
 
+    # Se encarga de actualizar el registro de logscrapping para una fecha en especifico, de no encontrar registro hace un insert.
+    def actualizarLogScrapping(dateFechaScrapping, idUrlScrapping, intRegistros):
+        '''
+        Input:
+            dateFechaScrapping: Fecha en que se realiza el scrapping
+            idUrlScrapping: Codigo de registro en tabla urlscrapping
+            intRegistros: Registros scrapeados
+        Output:
+            True/False registro exitoso
+            strError Mensaje de error
+        '''
+        
+        strCadenaConexion = DBController.obtenerCadenaConexion() 
+        tran = None 
+        resultado = False
+        strError = None
+        
+        try:
+            
+            # Conexion a base de datos
+            engine = create_engine(strCadenaConexion)
+            con = engine.connect()
+            tran = con.begin()
+
+            strQuery = "select count(*) from logscrapping where idurlscrapping = %(idscrapping)s and fechascrapping = date(%(fechascrapp)s)"
+            registros = con.execute(strQuery, idscrapping = idUrlScrapping, fechascrapp = dateFechaScrapping).fetchone()[0]
+            
+            # Si el id de consulta es nulo se procede a realizar una insercion
+            if (registros is None or registros == 0):
+                strQuery = '''
+                    insert into logscrapping(idurlscrapping, fechascrapping, cantidadintentos, cantidadregistros) 
+                    values(%(idscrapping)s, %(fechascrapp)s, %(intentos)s, %(registros)s)
+                '''
+                # Ejecucion de insercion
+                con.execute(strQuery, idscrapping = idUrlScrapping, fechascrapp = dateFechaScrapping, intentos = 1, registros = intRegistros)
+
+            # Si existe id entonces se procede 
+            else:
+
+                strQuery = '''
+                    update logscrapping 
+                    set cantidadintentos = (cantidadintentos + 1), 
+                        cantidadregistros = cantidadregistros + %(registros)s
+                    where idurlscrapping = %(idscrapping)s 
+                    and date(fechascrapping) = date(%(fechascrapp)s) 
+                '''
+
+                # Ejecucion de actualizacion
+                con.execute(strQuery, fechascrapp = dateFechaScrapping, idscrapping = idUrlScrapping, registros = intRegistros)
+
+            tran.commit()
+            resultado = True
+
+        except Exception as e:
+            strError = e
+            tran.rollback()
+            resultado = False
+            
+
+        finally:
+            if(con is not None):
+                con.close()
+
+        return resultado, strError
+
 
     # Registra los datos de scrapping
     @staticmethod
@@ -400,7 +465,6 @@ class DBController():
         strCadenaConexion = DBController.obtenerCadenaConexion() # Cadena de conexion
         tran = None
 
-        
         # Recorremos cada registro
         for registro in listaRegistros:
 
@@ -415,14 +479,13 @@ class DBController():
                 intIdRegistro = registro.id
                 strLinkPagina = registro.linkPagina
                 listaAtributos = registro.atributos
-
+                
                 # Query para insercion de nuevo registro
-                strQuery = "INSERT INTO encabezadoregistros(idregistro, linkpagina) VALUES (%(idregistro)s, %(linkpgina)s) RETURNING CodigoEncabezado"
+                strQuery = "INSERT INTO encabezadoregistros(idregistro, linkpagina) VALUES (%(idregistro)s, %(linkpagina)s) RETURNING CodigoEncabezado"
                 intCodigoEncabezado = con.execute(strQuery, idregistro = intIdRegistro, linkpagina = strLinkPagina).fetchone()[0]
 
                 # Recorremos cada detalle
                 for registroDetalle in listaAtributos:
-
                     strCampo = registroDetalle.campo
                     strValor = registroDetalle.valor
                     strValorJSON = None
@@ -435,13 +498,11 @@ class DBController():
                      # Query para insercion de nuevo registro
                     strQuery = "INSERT INTO public.DetalleRegistros(CodigoEncabezado, NombreCampo, ValorCampo, ValorJSON) VALUES (%(codigoencabezado)s, %(nombrecampo)s, %(valorcampo)s, %(valorjson)s)"
                     con.execute(strQuery, codigoencabezado = intCodigoEncabezado, nombrecampo = strCampo, valorcampo = strValor, valorjson = strValorJSON)
-
                 
-                tran.commit()
                 intRegistrosIngresados += 1
+                tran.commit()
 
             except Exception as e:
-                
                 strError = e
                 tran.rollback()
             

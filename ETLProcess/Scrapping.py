@@ -13,6 +13,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
+from DBController.AccionSistema import AccionSistema
 
 # Texto del boton de carga
 strTextoBoton = "CARGAR MÁS"
@@ -303,7 +304,7 @@ def ejecutarScrapping(strUrlPagina, intNumeroClics, intCantidadLimiteRegistros, 
     # Para devolver la cantidad de registros totales
     intRegistrosTotales = 0
 
-    for pagina in range(1, intPaginas):
+    for pagina in range(1, 2): #intPaginas):
 
         print("Pagina #" + str(pagina)) 
 
@@ -336,7 +337,7 @@ def main():
     dfRegistros, strError = localdb.DBController.obtenerUrlScrapping(dateFechaActual)
 
     if(dfRegistros is None or len(dfRegistros) == 0):
-        localdb.registrarAccion(AccionSistema.WARNING.name, "No se pudieron obtener los registros de URL para scraping. [Scrapping.py | main]. " + strError)
+        localdb.DBController.registrarAccion(AccionSistema.WARNING.name, "No se pudieron obtener los registros de URL para scraping. [Scrapping.py | main]. " + str(strError))
         exit()
 
     # Iteramos por cada registro encontrado de URL
@@ -356,8 +357,15 @@ def main():
         # Actualizamos los registros
         if(strError is not None or intCantidadRegistros == 0):
             intCantidadRegistros = 0
+        
+        # Registro de la cantidad de registros scrappeados para la URL
+        blnResultado, strError = localdb.DBController.actualizarLogScrapping(dateFechaActual, idUrlScrapping, intCantidadRegistros)
 
-            #TODO: Actualizar registros
+        # Verificamos si se actualizo el registro para log de scrapping
+        if(blnResultado == False or strError is not None):
+            localdb.DBController.registrarAccion(AccionSistema.ERROR.name, "Para IdUrlScrapping " + str(idUrlScrapping) + " no se pudo registrar la cantidad de registros. [Scrapping.py | main]. " + str(strError))
+        else:
+            localdb.DBController.registrarAccion(AccionSistema.SCRAPPING.name, "Para IdUrlScrapping " + str(idUrlScrapping) + " se completo el proceso de scrapping. [Scrapping.py | main]. ")
 
 
 main()
