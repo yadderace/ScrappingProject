@@ -509,6 +509,16 @@ def actualizarRegistrosLimpios():
 
     return True
 
+# Ejecuta el proceso de actualizar vista materializada para la base de datos
+def actualizarVistaMaterializada():
+    blnResultado, strError = localdb.DBController.actualizarVistaMaterializada()
+
+    if(blnResultado == False):
+        localdb.DBController.registrarAccion(AccionSistema.WARNING.name, "Proceso de limpieza insatisfactorio. [Transformation.py | mainProcess]. lecturaDataScrapping")
+        return False
+    
+    return True
+
 # Proceso principal para realizar la transformacion de datos
 def mainProcess():
     # Obteniendo encabezado y detalle
@@ -541,6 +551,11 @@ def mainProcess():
     # Actualizamos aquellos registros que ya fueron limpiados
     if(actualizarRegistrosLimpios() == False):
         localdb.DBController.registrarAccion(AccionSistema.ERROR.name, "No se ejecuto la actualizacion de registros scrapeados. [Transformation.py | mainProcess]. ActualizarRegistrosLimpios")
+        exit()
+    
+    # Actualizamos aquellos registros que ya fueron limpiados
+    if(actualizarVistaMaterializada() == False):
+        localdb.DBController.registrarAccion(AccionSistema.ERROR.name, "No se ejecuto la actualizacion de registros scrapeados. [Transformation.py | mainProcess]. Actualizar Vista Maaterializada")
         exit()
     
     localdb.DBController.registrarAccion(AccionSistema.DATA_CLEANING.name, "Ejecucion de limpieza y transformacion completado. [Transformation.py | mainProcess].")

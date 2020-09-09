@@ -265,6 +265,32 @@ class DBController():
 
         return blnEjecucion, strError
 
+    @staticmethod
+    def actualizarVistaMaterializada():
+        '''
+        Se encarga de ejecutar el query para actualizar la vista materializada
+        '''
+
+        strCadenaConexion = DBController.obtenerCadenaConexion() # Cadena de conexion
+        blnEjecucion = False # Bandera de ejecucion
+        strError = None
+
+        try:
+            # Conexion a base de datos
+            engine = create_engine(strCadenaConexion)
+            
+            # Ejecucion de actualizacion
+            strQuery = "REFRESH MATERIALIZED VIEW mvwSetLimpio"
+            engine.execute(strQuery)
+
+            blnEjecucion = True
+
+        except Exception as e:
+            strError = str(e)
+            blnEjecucion
+
+        return blnEjecucion, strError
+
     ###########################################################################################
     # Funciones ModelConstruction.py
 
@@ -455,7 +481,6 @@ class DBController():
                 con.close()
 
         return resultado, strError
-
 
     # Registra los datos de scrapping
     @staticmethod
