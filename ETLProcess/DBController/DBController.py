@@ -69,7 +69,7 @@ class DBController():
                 con.close()
 
         if(strError is not None):
-            raise Exception("No se puede registrar accion debido a " + strError
+            raise Exception("No se puede registrar accion debido a " + strError)
 
         return blnEjecucion
     
