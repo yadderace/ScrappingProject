@@ -304,7 +304,7 @@ def ejecutarScrapping(strUrlPagina, intNumeroClics, intCantidadLimiteRegistros, 
     # Para devolver la cantidad de registros totales
     intRegistrosTotales = 0
 
-    for pagina in range(1, 2): #intPaginas):
+    for pagina in range(1, intPaginas):
 
         print("Pagina #" + str(pagina)) 
 
