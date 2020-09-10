@@ -13,10 +13,29 @@ class DBController():
             Output: String con cadena de conexion
         '''
         strDataBase = os.environ.get('DATABASE_NAME')
+
+        if(strDataBase is None):
+            raise Exception("No se encontro variable de entorno DATABASE_NAME")
+
         strUserName = os.environ.get('USER_NAME')
+
+        if(strUserName is None):
+            raise Exception("No se encontro variable de entorno USER_NAME")
+
         strPortDB = os.environ.get('PORT_DB')
+
+        if(strPortDB is None):
+            raise Exception("No se encontro variable de entorno PORT_DB")
+
         strHostDB = os.environ.get('HOST_DB')
+
+        if(strHostDB is None):
+            raise Exception("No se encontro variable de entorno HOST_DB")
+
         strPassword = os.environ.get('PASSWORD_USR')
+
+        if(strPassword is None):
+            raise Exception("No se encontro variable de entorno PASSWORD_USR")
 
         strCadenaConexion = 'postgresql://'+ strUserName + ':' + strPassword + '@' + strHostDB + ':' + strPortDB + '/' + strDataBase
 
