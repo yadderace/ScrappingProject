@@ -68,7 +68,10 @@ class DBController():
             if(con is not None):
                 con.close()
 
-        return blnEjecucion, strError
+        if(strError is not None):
+            raise Exception("No se puede registrar accion debido a " + strError
+
+        return blnEjecucion
     
     ###########################################################################################
     # Funciones Transformation.py
