@@ -38,6 +38,9 @@ def ordenarDatos(dfCampos, dfData):
     
     return dfData
 
+@app.route('/')
+def hello_world():
+    return 'Hello world!\n'
 
 @app.route('/predict', methods = ['POST'])
 def predict():
