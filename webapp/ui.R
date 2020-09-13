@@ -7,6 +7,7 @@
 
 library(shiny)
 library(shinydashboard)
+library(shinyWidgets)
 library(leaflet)
 
 ui <- dashboardPage(skin = "green",
@@ -25,22 +26,47 @@ ui <- dashboardPage(skin = "green",
     tabItems(
       
       tabItem(tabName = "prediccion_precio",
+              fluidRow(width = 12, align = "center",
+                column(12, align = "center",
+                       box(title = "Caractersiticas", width = 12, align = "center",  solidHeader = TRUE, status = "primary", 
+                           
+                           
+                           column(4, align = "left", 
+                                  numericInput("espacio_m2", h3("Area (metros cuadrados)"), value = 25, min = 0),
+                                  radioButtons("moneda", h3("Moneda Venta"), choices = list("Dolar" = 1, "Quetzales" = 2), selected = 1)),
+                           
+                           column(4, align = "left", 
+                                  numericInput("habitaciones", h3("Habitaciones"), value = 2, min = 0),
+                                  radioButtons("parqueo", h3("Parqueo"), choices = list("Si" = 1, "No" = 2), selected = 1)),
+                           
+                           column(4, align = "left", 
+                                  numericInput("banos", h3("Baños"), value = 2, min = 0),
+                                  radioButtons("vendedor", h3("Tipo Vendedor"), choices = list("Dueño Directo" = 1, "Inmobiliaria" = 2), selected = 1))
+                           
+                           
+                           
+                       ))
+                
+              ),
+              
               fluidRow(
-                box(title = "Caractersiticas", width = 4, solidHeader = TRUE, status = "primary", 
-                    numericInput("espacio_m2", h2("Espacio (m2)"), value = 25, min = 0),
-                    numericInput("habitaciones", h2("Habitaciones"), value = 2, min = 0),
-                    numericInput("banos", h2("Banos"), value = 2, min = 0),
-                    radioButtons("moneda", h3("Moneda"), choices = list("Dolar" = 1, "Quetzales" = 2), selected = 1),
-                    radioButtons("parqueo", h3("Parqueo"), choices = list("Si" = 1, "No" = 2), selected = 1),
-                    radioButtons("vendedor", h3("Tipo Vendedor"), choices = list("Dueno Directo" = 1, "Inmobiliaria" = 2), selected = 1),
-                    actionButton("calcular", "Calcular")
-                    ),
-                
-                box(title = "Ubicacion", width = 6, solidHeader = TRUE,
+                box(title = "Ubicacion", width = 6, align = "center",  solidHeader = TRUE, status = "primary",
                     leafletOutput("predictionMap")
-                    ),
+                ),
                 
-                valueBoxOutput("precio")
+                box(title = "Resultados", width = 6, align = "center",  solidHeader = TRUE, status = "primary",
+                    
+                    column(6, align = "left", htmlOutput("seleccion_variables")),
+                    
+                    column(6, align = "center", 
+                           valueBoxOutput("precio", width = 12),
+                           actionBttn(
+                             inputId = "calcular",
+                             label = "Calcular Precio",
+                             color = "primary",
+                             style = "bordered",
+                             size = "md"
+                           )))
               )
       ),
       
