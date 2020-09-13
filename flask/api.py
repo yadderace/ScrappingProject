@@ -18,6 +18,45 @@ app = Flask(__name__)
 
 class DBOperations():
 
+    
+    @staticmethod
+    def obtenerCadenaConexion():
+        '''
+            Devuele la cadena de conexion haciendo uso de variables de entorno.
+
+            Output: String con cadena de conexion
+        '''
+        strDataBase = os.environ.get('DATABASE_NAME')
+
+        if(strDataBase is None):
+            raise Exception("No se encontro variable de entorno DATABASE_NAME")
+
+        strUserName = os.environ.get('USER_NAME')
+
+        if(strUserName is None):
+            raise Exception("No se encontro variable de entorno USER_NAME")
+
+        strPortDB = os.environ.get('PORT_DB')
+
+        if(strPortDB is None):
+            raise Exception("No se encontro variable de entorno PORT_DB")
+
+        strHostDB = os.environ.get('HOST_DB')
+
+        if(strHostDB is None):
+            raise Exception("No se encontro variable de entorno HOST_DB")
+
+        strPassword = os.environ.get('PASSWORD_USR')
+
+        if(strPassword is None):
+            raise Exception("No se encontro variable de entorno PASSWORD_USR")
+
+        strCadenaConexion = 'postgresql://'+ strUserName + ':' + strPassword + '@' + strHostDB + ':' + strPortDB + '/' + strDataBase
+
+        return strCadenaConexion
+
+    
+
     # Registra una accion en base de datos
     @staticmethod
     def registrarAccion(enumAccionSistema, strDescripcionAccion):
@@ -25,10 +64,11 @@ class DBOperations():
         con = None # Conexion
         blnEjecucion = False # Bandera de ejecucion de SQL
         strError = None # Mensaje de error
+        strCadenaConexion = DBOperations.obtenerCadenaConexion()
 
         try:
             # Conexion a base de datos
-            engine = create_engine('postgresql://postgres:150592@localhost:5432/DBApartamentos')
+            engine = create_engine(strCadenaConexion)
             con = engine.connect()
         
             strQuery = "INSERT INTO logaccionessistema(nombreaccion, descripcionaccion) VALUES (%(nombreaccion)s, %(descripcionaccion)s)"
@@ -54,10 +94,11 @@ class DBOperations():
         blnEjecucion = False # Bandera de ejecucion de SQL
         strError = None # Mensaje de error
         strArchivoModelo = None # Nombre del archivo del modelo
+        strCadenaConexion = DBOperations.obtenerCadenaConexion()
 
         try:
             # Conexion a base de datos
-            engine = create_engine('postgresql://postgres:150592@localhost:5432/DBApartamentos')
+            engine = create_engine(strCadenaConexion)
             con = engine.connect()
         
             strQuery = "SELECT archivomodelo FROM modeloencabezado WHERE active = true AND tipomodelo in ('LR', 'RF')"
@@ -86,10 +127,11 @@ class DBOperations():
         blnEjecucion = False # Bandera de ejecucion de SQL
         strError = None # Mensaje de error
         strArchivoModelo = None # Nombre del archivo del modelo
+        strCadenaConexion = DBOperations.obtenerCadenaConexion()
 
         try:
             # Conexion a base de datos
-            engine = create_engine('postgresql://postgres:150592@localhost:5432/DBApartamentos')
+            engine = create_engine(strCadenaConexion)
             con = engine.connect()
         
             strQuery = "SELECT archivomodelo FROM modeloencabezado WHERE active = true AND tipomodelo in ('KM')"
