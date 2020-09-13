@@ -19,9 +19,9 @@ shinyServer(function(input, output, session) {
   # [Fnc0]: Funcion para inicializar valores y renderizados
   fncInit <- function(){
     # Inicializadores de precio
-    output$precio <- renderValueBox({valueBox("Q0.00", "Precio", width = 2, icon = icon("credit-card"))})
-    output$olxPrecio <- renderValueBox({valueBox("Q0.00", "Precio", width = 3, icon = icon("credit-card"))})
-    output$predictionPrecio <- renderValueBox({valueBox("Q0.00", "Precio", width = 3, icon = icon("credit-card"))})
+    output$precio <- renderValueBox({valueBox("Q0.00", "Precio Sugerido", width = 2, icon = icon("credit-card"))})
+    output$olxPrecio <- renderValueBox({valueBox("Q0.00", "Precio Olx", width = 3, icon = icon("credit-card"))})
+    output$predictionPrecio <- renderValueBox({valueBox("Q0.00", "Precio Sugerido", width = 3, icon = icon("credit-card"))})
   }
   fncInit()
   
@@ -59,6 +59,24 @@ shinyServer(function(input, output, session) {
               lat = 14.6349, 
               zoom = 12) %>%
       addMarkers(lng = -90.5069, lat = 14.6349)
+  })
+  
+  
+  # =================================================================
+  # [Renderizado de texto]
+  
+  output$seleccion_variables <- renderText({ 
+    strSeleccion <- paste("<b>Espacio:</b> ", input$olxEspacio, "</br>",
+                          "<b>Habitaciones:</b> ", input$olxHabitaciones, "</br>",
+                          "<b>Baños:</b> ", input$olxBanos, "</br>",
+                          "<b>Moneda Venta:</b> ", ifelse(input$moneda == 1, "Dolares", "Quetzales") , "</br>",
+                          "<b>Parqueo:</b> ", ifelse(input$parqueo == 1, "Si", "No") , "</br>",
+                          "<b>Vendedor:</b> ", ifelse(input$vendedor == 1, "Dueño Directo", "Inmobiliaria") , "</br>",
+                          "<b>Latitud:</b> ", as.character(valores$coordenadas$lat) , "</br>",
+                          "<b>Longitud:</b> ", as.character(valores$coordenadas$lng) , "</br>",
+                          sep = "")
+    
+    return(strSeleccion)
   })
   
   
@@ -141,7 +159,7 @@ shinyServer(function(input, output, session) {
       strSimbolo <- "US$"
     }
     strPrecio <- paste(strSimbolo, formatC(precio, format = "d", big.mark = ","), sep = "")
-    output$precio <- renderValueBox({valueBox(strPrecio, "Precio", width = 2, icon = icon("credit-card"))})
+    output$precio <- renderValueBox({valueBox(strPrecio, "Precio Sugerido", width = 2, icon = icon("credit-card"))})
     
   })
   
@@ -254,7 +272,7 @@ shinyServer(function(input, output, session) {
       strSimbolo <- "US$"
     }
     strPrecioOlx <- paste(strSimbolo, formatC(precio, format = "d", big.mark = ","), sep = "")
-    output$predictionPrecio <- renderValueBox({valueBox(strPrecioOlx, "Precio Mercado", width = 2, icon = icon("credit-card"))})
+    output$predictionPrecio <- renderValueBox({valueBox(strPrecioOlx, "Precio Sugerido", width = 2, icon = icon("credit-card"))})
     
     
   })
