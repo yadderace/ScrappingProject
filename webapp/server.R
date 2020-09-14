@@ -161,8 +161,15 @@ shinyServer(function(input, output, session) {
     # Obteniendo URL de API
     urlApi <- fncObtenerRutaAccionAPI("PREDICT")
     
+    res <- NULL
+    
     # Ejecucion de peticion POST
-    res <- POST(urlApi, body = parms, encode = "json")
+    withProgress(message = 'Consultando datos', detail = 'Esto puede tomar un tiempo...',  {
+      res <- POST(urlApi, body = parms, encode = "json")
+    })
+    
+    if(is.null(res))
+      return(NULL)
     
     # Obtencion de respuesta y desplie en UI
     precio <- round(as.numeric(content(res, "text")), digits = 0)
@@ -187,8 +194,16 @@ shinyServer(function(input, output, session) {
     
     urlApi <- fncObtenerRutaAccionAPI("SCRAPPING")
     
-    # Ejecucion de peticion
-    res <- POST(urlApi, body = params, encode = "json", parse_to_json = TRUE)
+    res <- NULL
+    
+    withProgress(message = 'Consultando datos', detail = 'Esto puede tomar un tiempo...',  {
+      # Ejecucion de peticion
+      res <- POST(urlApi, body = params, encode = "json", parse_to_json = TRUE)
+    })
+    
+    if(is.null(res))
+      return(NULL)
+    
     jsonResp <- content(res, as = "parsed")
     
     
@@ -282,8 +297,14 @@ shinyServer(function(input, output, session) {
     # Obteniendo URL de API
     urlApi <- fncObtenerRutaAccionAPI("PREDICT")
     
+    res <- NULL
     # Ejecucion de peticion POST
-    res <- POST(urlApi, body = parms, encode = "json")
+    withProgress(message = 'Consultando datos', detail = 'Esto puede tomar un tiempo...',  {
+      res <- POST(urlApi, body = parms, encode = "json")
+    })
+    
+    if(is.null(res))
+      return(NULL)
     
     # Obtencion de respuesta y desplie en UI
     precio <- round(as.numeric(content(res, "text")), digits = 0)
