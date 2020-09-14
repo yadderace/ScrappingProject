@@ -9,6 +9,7 @@ library(shiny)
 library(shinydashboard)
 library(shinyWidgets)
 library(leaflet)
+library(shinyjs)
 
 ui <- dashboardPage(skin = "green",
   dashboardHeader(title = "UVG"),
@@ -72,31 +73,61 @@ ui <- dashboardPage(skin = "green",
       
       
       tabItem(tabName = "comparacion_olx",
-              
+
               fluidRow(
-                  box(title = "URL", width = 6, solidHeader = TRUE, status = "primary",
-                      textInput("urlApartamento", label = "", value = ""),
-                      actionButton("btnComparar", "Comparar")),
-                  
-                  valueBoxOutput("olxPrecio", width = 3),
-                  
-                  valueBoxOutput("predictionPrecio", width = 3)),
+                
+                box(title = "Caracteristicas", width = 12, solidHeader = TRUE, status = "primary", 
+                     
+                    
+                    fluidRow(width = 12, 
+                             
+                             column(8, textInput("urlApartamento", h3("Direccion URL (OLX)"), value = "")),
+                             
+                             column(4, align = "center", 
+                                    actionBttn( inputId = "calcular2",
+                                      label = "Obtener Datos",
+                                      color = "primary",
+                                      style = "bordered",
+                                      size = "md"
+                             ))),
+                    
+                    fluidRow(width = 12,
+                             useShinyjs(),
+                             disabled(column(4, 
+                                    numericInput("olxEspacio", h3("Area (metros cuadrados)"), value = 25, min = 0),
+                                    radioButtons("olxMoneda", h3("Moneda"), choices = list("Dolar" = 1, "Quetzales" = 2), selected = 1)),
+                             
+                             column(4, 
+                                    numericInput("olxHabitaciones", h3("Habitaciones"), value = 2, min = 0),
+                                    radioButtons("olxParqueo", h3("Parqueo"), choices = list("Si" = 1, "No" = 2), selected = 1)),
+                             
+                             column(4, 
+                                    numericInput("olxBanos", h3("Baños"), value = 2, min = 0),
+                                    radioButtons("olxVendedor", h3("Tipo Vendedor"), choices = list("Dueno Directo" = 1, "Inmobiliaria" = 2), selected = 1))
+                             )))),
               
               
-              fluidRow(
-                box(title = "Caracteristicas", width = 4, solidHeader = TRUE, status = "primary", 
-                           numericInput("olxEspacio", h2("Espacio (m2)"), value = 25, min = 0),
-                           numericInput("olxHabitaciones", h2("Habitaciones"), value = 2, min = 0),
-                           numericInput("olxBanos", h2("Banos"), value = 2, min = 0),
-                           radioButtons("olxMoneda", h3("Moneda"), choices = list("Dolar" = 1, "Quetzales" = 2), selected = 1),
-                           radioButtons("olxParqueo", h3("Parqueo"), choices = list("Si" = 1, "No" = 2), selected = 1),
-                           radioButtons("olxVendedor", h3("Tipo Vendedor"), choices = list("Dueno Directo" = 1, "Inmobiliaria" = 2), selected = 1)),
               
-                box(title = "Ubicacion", width = 6, solidHeader = TRUE,
-                      leafletOutput("olxMap"))
-              ))
+              fluidRow(width = 12, 
+                       box(title = "Ubicacion", width = 6, align = "center",  solidHeader = TRUE, status = "primary",
+                           leafletOutput("olxMap")),
+                       
+                       box(title = "Resultados", width = 6, align = "center",  solidHeader = TRUE, status = "primary",
+                           
+                           column(6, align = "left", htmlOutput("seleccion_variables2")),
+                           
+                           column(6, align = "center", 
+                                  
+                                  valueBoxOutput("olxPrecio", width = 12),
+                                  
+                                  valueBoxOutput("predictionPrecio", width = 12)),
+                           
+                           column(12, align = "center", actionBttn(
+                             inputId = "btnComparar",
+                             label = "Calcular Precio",
+                             color = "primary",
+                             style = "bordered",
+                             size = "md"
+                           ))))
       
-      
-    )
-  )
-)
+))))

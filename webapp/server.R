@@ -20,7 +20,7 @@ shinyServer(function(input, output, session) {
   fncInit <- function(){
     # Inicializadores de precio
     output$precio <- renderValueBox({valueBox("Q0.00", "Precio Sugerido", width = 2, icon = icon("credit-card"))})
-    output$olxPrecio <- renderValueBox({valueBox("Q0.00", "Precio Olx", width = 3, icon = icon("credit-card"))})
+    output$olxPrecio <- renderValueBox({valueBox("Q0.00", "Precio Olx", width = 3, icon = icon("credit-card"), color = "green")})
     output$predictionPrecio <- renderValueBox({valueBox("Q0.00", "Precio Sugerido", width = 3, icon = icon("credit-card"))})
   }
   fncInit()
@@ -66,9 +66,9 @@ shinyServer(function(input, output, session) {
   # [Renderizado de texto]
   
   output$seleccion_variables <- renderText({ 
-    strSeleccion <- paste("<b>Espacio:</b> ", input$olxEspacio, "</br>",
-                          "<b>Habitaciones:</b> ", input$olxHabitaciones, "</br>",
-                          "<b>Baños:</b> ", input$olxBanos, "</br>",
+    strSeleccion <- paste("<b>Espacio:</b> ", input$espacio_m2, "</br>",
+                          "<b>Habitaciones:</b> ", input$habitaciones, "</br>",
+                          "<b>Baños:</b> ", input$banos, "</br>",
                           "<b>Moneda Venta:</b> ", ifelse(input$moneda == 1, "Dolares", "Quetzales") , "</br>",
                           "<b>Parqueo:</b> ", ifelse(input$parqueo == 1, "Si", "No") , "</br>",
                           "<b>Vendedor:</b> ", ifelse(input$vendedor == 1, "Dueño Directo", "Inmobiliaria") , "</br>",
@@ -214,7 +214,7 @@ shinyServer(function(input, output, session) {
     precioOlx <- round(as.numeric(listaValores$PRECIO), digits = 0)
     strSimbolo <- ifelse(strMoneda != "Q", "US$", "Q")
     strPrecio <- paste(strSimbolo, formatC(precioOlx, format = "d", big.mark = ","), sep = "")
-    output$olxPrecio <- renderValueBox({valueBox(strPrecio, "Precio OLX", width = 3, icon = icon("credit-card"))})
+    output$olxPrecio <- renderValueBox({valueBox(strPrecio, "Precio OLX", width = 3, icon = icon("credit-card"), color = "green")})
     
     
     # Lectura de variables del formulario
