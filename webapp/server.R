@@ -79,6 +79,19 @@ shinyServer(function(input, output, session) {
     return(strSeleccion)
   })
   
+  output$seleccion_variables2 <- renderText({ 
+    strSeleccion <- paste("<b>Espacio:</b> ", input$olxEspacio, "</br>",
+                          "<b>Habitaciones:</b> ", input$olxHabitaciones, "</br>",
+                          "<b>Baños:</b> ", input$olxBanos, "</br>",
+                          "<b>Moneda Venta:</b> ", ifelse(input$olxMoneda == 1, "Dolares", "Quetzales") , "</br>",
+                          "<b>Parqueo:</b> ", ifelse(input$olxParqueo == 1, "Si", "No") , "</br>",
+                          "<b>Vendedor:</b> ", ifelse(input$olxVendedor == 1, "Dueño Directo", "Inmobiliaria") , "</br>",
+                          "<b>Latitud:</b> ", as.character(valores$coordenadas$lat) , "</br>",
+                          "<b>Longitud:</b> ", as.character(valores$coordenadas$lng) , "</br>",
+                          sep = "")
+    
+    return(strSeleccion)
+  })
   
   # =================================================================
   # [Observe Event]

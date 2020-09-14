@@ -73,7 +73,7 @@ ui <- dashboardPage(skin = "green",
       
       
       tabItem(tabName = "comparacion_olx",
-
+              useShinyjs(),
               fluidRow(
                 
                 box(title = "Caracteristicas", width = 12, solidHeader = TRUE, status = "primary", 
@@ -92,7 +92,7 @@ ui <- dashboardPage(skin = "green",
                              ))),
                     
                     fluidRow(width = 12,
-                             useShinyjs(),
+                             
                              disabled(column(4, 
                                     numericInput("olxEspacio", h3("Area (metros cuadrados)"), value = 25, min = 0),
                                     radioButtons("olxMoneda", h3("Moneda"), choices = list("Dolar" = 1, "Quetzales" = 2), selected = 1)),
@@ -110,7 +110,7 @@ ui <- dashboardPage(skin = "green",
               
               fluidRow(width = 12, 
                        box(title = "Ubicacion", width = 6, align = "center",  solidHeader = TRUE, status = "primary",
-                           leafletOutput("olxMap")),
+                           disabled(leafletOutput("olxMap"))),
                        
                        box(title = "Resultados", width = 6, align = "center",  solidHeader = TRUE, status = "primary",
                            
