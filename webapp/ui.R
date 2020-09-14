@@ -84,7 +84,7 @@ ui <- dashboardPage(skin = "green",
                              column(8, textInput("urlApartamento", h3("Direccion URL (OLX)"), value = "")),
                              
                              column(4, align = "center", 
-                                    actionBttn( inputId = "calcular2",
+                                    actionBttn( inputId = "btnScrapping",
                                       label = "Obtener Datos",
                                       color = "primary",
                                       style = "bordered",

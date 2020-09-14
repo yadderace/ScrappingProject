@@ -164,7 +164,7 @@ shinyServer(function(input, output, session) {
   })
   
   
-  observeEvent(input$btnComparar, {
+  observeEvent(input$btnScrapping, {
     
     # Obteniendo el URL del apartamento
     strUrl <- input$urlApartamento
@@ -206,8 +206,12 @@ shinyServer(function(input, output, session) {
     
     
     # Actualizando mapa de ubicacion
-    if(!is.null(listaValores$LATITUD) && !is.null(listaValores$LONGITUD))
+    if(!is.null(listaValores$LATITUD) && !is.null(listaValores$LONGITUD)){
       fncAgregarMarkMapa("olxMap", longitud = listaValores$LONGITUD, latitud = listaValores$LATITUD)
+      isolate(
+        valores$coordenadas <- list(lat = listaValores$LATITUD, lng = listaValores$LONGITUD)
+      );
+    }
     
     # Agregando precio de OLX
     # Obtencion de respuesta y desplie en UI
@@ -215,6 +219,11 @@ shinyServer(function(input, output, session) {
     strSimbolo <- ifelse(strMoneda != "Q", "US$", "Q")
     strPrecio <- paste(strSimbolo, formatC(precioOlx, format = "d", big.mark = ","), sep = "")
     output$olxPrecio <- renderValueBox({valueBox(strPrecio, "Precio OLX", width = 3, icon = icon("credit-card"), color = "green")})
+    
+  })
+  
+  
+  observeEvent(input$btnComparar, {
     
     
     # Lectura de variables del formulario
@@ -246,16 +255,16 @@ shinyServer(function(input, output, session) {
     
     
     # Creacion de parametro para peticion
-    parms <- data.frame(espacio_m2 = numEspacioM2,
-                        banos = numBanos,
-                        habitaciones = numHabitaciones,
+    parms <- data.frame(espacio_m2 = input$olxEspacio,
+                        banos = input$olxBanos,
+                        habitaciones = input$olxHabitaciones,
                         monedaq = moneda_q,
                         monedad = moneda_d,
                         parqueo = parqueo,
                         tipodueno = tipodueno,
                         tipoinmobiliaria = tipoinmobiliaria,
-                        longitud = listaValores$LONGITUD,
-                        latitud = listaValores$LATITUD)
+                        longitud = valores$coordenadas$lng,
+                        latitud = valores$coordenadas$lat)
     
     # Obteniendo URL de API
     urlApi <- fncObtenerRutaAccionAPI("PREDICT")
