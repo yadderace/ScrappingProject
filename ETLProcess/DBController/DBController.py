@@ -397,6 +397,51 @@ class DBController():
 
         return idmodelo, strError
 
+    # Setea a true el modelo activo segun el id de modelo
+    @staticmethod
+    def actualizarModeloActivo(idModelo):
+        
+        '''
+            Registra los resultados de limpieza en las tablas de encabezado y detalle.
+
+            Input:
+                id del modelo que debe ser activo
+
+            Output:
+                Bandera de ejecucion exitosa
+        '''
+
+        strCadenaConexion = DBController.obtenerCadenaConexion() # Cadena de conexion
+        blnEjecucion = False # Bandera de ejecucion
+        strError = None
+        con = None
+        
+        try:
+            # Conexion a base de datos
+            engine = create_engine(strCadenaConexion)
+            con = engine.connect()
+            
+            # Ejecutamos actualizacion en de modelos
+            strQuery = "UPDATE modeloencabezado SET active = false WHERE tipomodelo in ('LR', 'RF')"
+            con.execute(strQuery)
+
+            # Actualizamos el modelo activo
+            strQuery = "UPDATE modeloencabezado SET active = true WHERE idmodelo = %(idModelo)s"
+            con.execute(strQuery, idModelo = idModelo)
+
+            blnEjecucion = True
+
+        except Exception as e:
+            strError = str(e)
+            blnEjecucion
+
+        finally:
+            if(con is not None):
+                con.close()
+
+        
+        return blnEjecucion, strError
+
     ###########################################################################################
     # Funciones Scrapping.py
 

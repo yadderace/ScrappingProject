@@ -23,7 +23,7 @@ def lecturaDataLimpia(dateFechaInicial, dateFechaFinal):
     dfRegistros, strError = localdb.DBController.obtenerDatosLimpios(dateFechaInicial, dateFechaFinal)
     
     if(dfRegistros is None):
-        localdb.registrarAccion(AccionSistema.ERROR.name, "No se pudo obtener registros limpios para construccion de modelo. [ModelConstruction.py | lecturaDataLimpia]. " + strError)
+        localdb.DBController.registrarAccion(AccionSistema.ERROR.name, "No se pudo obtener registros limpios para construccion de modelo. [ModelConstruction.py | lecturaDataLimpia]. " + strError)
         return None
     
     return dfRegistros
@@ -90,7 +90,7 @@ def registrarModeloKMean(kmModelo):
     idmodelo, strError = localdb.DBController.registrarModeloKMeans(strTipoModelo, strFileNameKM)
 
     if(idmodelo is None):
-        localdb.registrarAccion(AccionSistema.WARNING.name, "No se pudo registrar un nuevo modelo KMeans. [ModelConstruction.py | registrarModeloKMean]. " + strError)
+        localdb.DBController.registrarAccion(AccionSistema.WARNING.name, "No se pudo registrar un nuevo modelo KMeans. [ModelConstruction.py | registrarModeloKMean]. " + strError)
         return None
 
     return idmodelo
@@ -352,18 +352,11 @@ def registrarModelo(dfSetModelo, xTrain, fileName, nombreModelo, mseScore, r2Sco
 # Actualizamos los registros para dejar el modelo que estara activo.
 def actualizarModeloActivo(idModeloActivo):
     
-    # Conexion a base de datos
-    engine = create_engine('postgresql://postgres:150592@localhost:5432/DBApartamentos')
-    con = engine.connect()
-    
-    # Ejecutamos actualizacion en de modelos
-    strQuery = "UPDATE modeloencabezado SET active = false WHERE tipomodelo in ('LR', 'RF')"
-    con.execute(strQuery)
+    blnEjecucion, strError = localdb.DBController.actualizarModeloActivo(idModeloActivo)
 
-    # Actualizamos el modelo activo
-    strQuery = "UPDATE modeloencabezado SET active = true WHERE idmodelo = %(idModelo)s"
-    con.execute(strQuery, idModelo = idModeloActivo)
-    con.close()
+    if(not blnEjecucion):
+        localdb.DBController.registrarAccion(AccionSistema.ERROR.name, "No se pudo actualizar el modelo activo. [ModelConstruction.py | actualizarModeloActivo]. " + strError)
+        return None
 
 # Construye los modelos sobre el set de datos y guarda los archivos.
 def construirModelos(dfSetModelo):
@@ -411,7 +404,7 @@ def main():
     # Lectura en base de datos de los registros candidatos para la construccion del modelo
     dfSetLimpio = lecturaDataLimpia(dateFechaAnterior, dateFechaActual)
     if(dfSetLimpio is None):
-        localdb.registrarAccion(AccionSistema.ERROR.name, "Proceso de construccion de modelo INCOMPLETO. [ModelConstruction.py | main]. ")
+        localdb.DBController.registrarAccion(AccionSistema.ERROR.name, "Proceso de construccion de modelo INCOMPLETO. [ModelConstruction.py | main]. ")
         exit()
 
     # Tranformacion de los datos a utilizar para el modelo
@@ -442,7 +435,7 @@ def mainResultados():
         #print(dfSetLimpio)
         
         if(dfSetLimpio is None):
-            localdb.registrarAccion(AccionSistema.ERROR.name, "Proceso de construccion de modelo INCOMPLETO. [ModelConstruction.py | main]. ")
+            localdb.DBController.registrarAccion(AccionSistema.ERROR.name, "Proceso de construccion de modelo INCOMPLETO. [ModelConstruction.py | main]. ")
             exit()
 
         # Tranformacion de los datos a utilizar para el modelo
