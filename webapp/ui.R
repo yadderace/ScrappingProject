@@ -28,9 +28,16 @@ ui <- dashboardPage(skin = "green",
       
       tabItem(tabName = "dashboard", 
               fluidRow(width = 12,
+                       
                        box(title = "Registros por mes", width = 6, align = "center",  solidHeader = TRUE, status = "primary",
                            plotOutput("dateCountsPlot")
-                       ))),
+                       ),
+                       
+                       box(title = "Precios promedios", width = 6, align = "center",  solidHeader = TRUE, status = "primary",
+                           plotOutput("averagePricePlot")
+                       )
+                       
+              )),
       
       tabItem(tabName = "prediccion_precio",
               fluidRow(width = 12, align = "center",

@@ -4,6 +4,8 @@ library(httr)
 library(leaflet)
 library(ggplot2)
 library(lubridate)
+library(dplyr)
+library(scales)
 
 source('utility/CommonFunctions.R')
 
@@ -120,9 +122,11 @@ shinyServer(function(input, output, session) {
     if(is.null(valores$dfRegistros))
       return(NULL)
     
+    # Filtro de columnas
     registros <- valores$dfRegistros[,c('fechacreacion','idregistro')]
     registros <- unique(registros)
     
+    # Creacion de grafica
     g <- ggplot(registros) + 
       aes(x = floor_date(fechacreacion, "month")) + 
       xlab("Mes") +
@@ -133,6 +137,30 @@ shinyServer(function(input, output, session) {
     return(g)
   })
   
+  
+  output$averagePricePlot <- renderPlot({
+    
+    # No renderiza grafica si no hay datos
+    if(is.null(valores$dfRegistros))
+      return(NULL)
+    
+    registros <- valores$dfRegistros[,c('fechacreacion', 'precio', 'moneda')]
+    
+    registros$moneda <- as.character(registros$moneda)
+    registros$precio <- as.numeric(registros$precio)
+    registros <- registros %>% group_by(fechacreacion, moneda) %>% summarise(precio_mean = mean(precio))
+    
+    # Creacion de grafica
+    g <- ggplot(registros) + 
+      aes(x = fechacreacion, y = precio_mean, color = moneda) + 
+      ylab("Precio Promedio") +
+      scale_y_continuous(labels = comma) +
+      xlab("Fecha Registro") +
+      geom_smooth(method = "loess", se = FALSE, linetype = "dashed") +
+      theme_bw()
+    
+    return(g)
+  })
   
   # =================================================================
   # [Renderizado de texto]
