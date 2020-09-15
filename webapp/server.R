@@ -2,6 +2,8 @@
 library(shiny)
 library(httr)
 library(leaflet)
+library(ggplot2)
+library(lubridate)
 
 source('utility/CommonFunctions.R')
 
@@ -44,7 +46,7 @@ shinyServer(function(input, output, session) {
     urlApi <- fncObtenerRutaAccionAPI("DATA")
     
     # Generando parametros
-    params <- data.frame(fechaFinal = format(Sys.Date(), "%Y-%m-%d"), fechaInicial = format(Sys.Date() - 60, "%Y-%m-%d"))
+    params <- data.frame(fechaFinal = format(Sys.Date(), "%Y-%m-%d"), fechaInicial = format(Sys.Date() - 365, "%Y-%m-%d"))
     
     # Ejecucion de la peticion
     res <- NULL
@@ -80,6 +82,7 @@ shinyServer(function(input, output, session) {
     return(dfRegistros)
   }
   
+  
   fncInit()
   
   # =================================================================
@@ -106,6 +109,28 @@ shinyServer(function(input, output, session) {
               lat = 14.6349, 
               zoom = 12) %>%
       addMarkers(lng = -90.5069, lat = 14.6349)
+  })
+  
+  # =================================================================
+  # [Renderizado graficas]
+  
+  output$dateCountsPlot <- renderPlot({
+    
+    # No renderiza grafica si no hay datos
+    if(is.null(valores$dfRegistros))
+      return(NULL)
+    
+    registros <- valores$dfRegistros[,c('fechacreacion','idregistro')]
+    registros <- unique(registros)
+    
+    g <- ggplot(registros) + 
+      aes(x = floor_date(fechacreacion, "month")) + 
+      xlab("Mes") +
+      ylab("Cantdad Registros") +
+      geom_bar(fill = "steelblue") +
+      theme_bw()
+    
+    return(g)
   })
   
   

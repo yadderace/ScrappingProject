@@ -26,6 +26,12 @@ ui <- dashboardPage(skin = "green",
   dashboardBody(
     tabItems(
       
+      tabItem(tabName = "dashboard", 
+              fluidRow(width = 12,
+                       box(title = "Registros por mes", width = 6, align = "center",  solidHeader = TRUE, status = "primary",
+                           plotOutput("dateCountsPlot")
+                       ))),
+      
       tabItem(tabName = "prediccion_precio",
               fluidRow(width = 12, align = "center",
                 column(12, align = "center",

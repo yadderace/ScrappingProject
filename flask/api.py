@@ -163,9 +163,9 @@ class DBOperations():
         try:
             # Conexion a base de datos
             engine = create_engine(strCadenaConexion)
-            
+
             # Consulta a vista de datos limpios
-            strQuery = 'SELECT * FROM mvwSetLimpio WHERE fecharegistro BETWEEN %(fechaInicial)s AND %(fechaFinal)s'
+            strQuery = 'SELECT * FROM mvwSetLimpio WHERE fecharegistro BETWEEN %(fechaInicial)s AND %(fechaFinal)s and tipoinmueble = 0'
     
             # Leyendo de base de datos especificando el query y los parametros de fecha.
             dfRegistros = pd.read_sql_query(strQuery, 
