@@ -237,7 +237,7 @@ def obtenerFuentePagina(pTimeout, pNumeroClics, urlPeticion):
     chrome_options = Options()
     chrome_options.add_argument('--headless')
 
-    driver = webdriver.Chrome(options=chrome_options, executable_path = './chromedriver')
+    driver = webdriver.Chrome(options=chrome_options, executable_path = '/home/uvgadming/UVGProject/ScrappingProject/ETLProcess/chromedriver')
     driver.get(urlPeticion)
     driver.implicitly_wait(pTimeout)
 
