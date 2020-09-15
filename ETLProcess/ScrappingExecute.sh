@@ -10,6 +10,6 @@ source ~/anaconda3/etc/profile.d/conda.sh
 conda activate olxproject
 
 # Running script
-python ./Scrapping.py
+python /home/uvgadming/UVGProject/ScrappingProject/ETLProcess/Scrapping.py
 
 echo "FINALIZACION: $(date)"
