@@ -147,7 +147,8 @@ class DBOperations():
                 con.close()
 
         return blnEjecucion, strArchivoModelo, strError
-
+    
+    # Busca los registros de vista materializada dado un rango de fechas.
     @staticmethod
     def obtenerDatosApartamentos(dateFechaInicial, dateFechaFinal):
         '''
@@ -175,6 +176,38 @@ class DBOperations():
                 params = {
                     'fechaInicial': dateFechaInicial, 
                     'fechaFinal': dateFechaFinal}, coerce_float = False, con=engine)
+
+        except Exception as e:
+            strError = str(e)
+
+        return dfRegistros, strError
+
+    # Devuelve la informacion del modelo activo
+    @staticmethod
+    def obtenerDatosModeloActivo():
+        '''
+            Se consulta en la tabla de modelo encabezado la info relacionada al modelo que se utiliza para realizar la prediccion
+
+            Output: Dataframe con registro del modelo
+        '''
+        dfRegistros = None # Registros de modelo
+        strError = None # Mensaje de error
+        strCadenaConexion = DBOperations.obtenerCadenaConexion() # Cadena de conexion
+
+        try:
+            # Conexion a base de datos
+            engine = create_engine(strCadenaConexion)
+
+            # Consulta a vista de datos limpios
+            strQuery = '''
+                    select r2score, msescore, tipomodelo 
+                        from modeloencabezado
+                    where active = true
+                    and tipomodelo in ('RF', 'LR') 
+                '''
+    
+            # Leyendo de base de datos especificando el query y los parametros de fecha.
+            dfRegistros = pd.read_sql_query(strQuery, coerce_float = False, con=engine)
 
         except Exception as e:
             strError = str(e)
@@ -480,6 +513,20 @@ def data():
 
     if(dfRegistros is None):
         DBOperations.registrarAccion(AccionSistema.WARNING.name, "No se pudieron obtener registros de vista materializada. [api.py ! data()] " + str(strErr))
+        return "No se pudieron obtener registros", 500
+
+        
+    return Response(dfRegistros.to_json(orient="records"), mimetype='application/json')
+
+
+@app.route('/model_info', methods = ['POST'])
+def model_info():
+    
+    # Consulta de datos
+    dfRegistros, strError = DBOperations.obtenerDatosModeloActivo()
+
+    if(dfRegistros is None):
+        DBOperations.registrarAccion(AccionSistema.WARNING.name, "No se pudieron obtener registros del modelo activo. [api.py ! model_info()] " + str(strErr))
         return "No se pudieron obtener registros", 500
 
         
