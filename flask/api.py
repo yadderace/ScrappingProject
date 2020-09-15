@@ -8,7 +8,7 @@ import re
 import datetime
 
 from sqlalchemy import create_engine
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 from bs4 import BeautifulSoup
 from json import JSONEncoder
 from enum import Enum
@@ -476,10 +476,11 @@ def data():
     dfRegistros, strError = DBOperations.obtenerDatosApartamentos(dateFechaInicial, dateFechaFinal)
 
     if(dfRegistros is None):
-        DBOperations.registrarAccion(AccionSistema.WARNING.name, "No se pudieron obtener registros de vista materializada. [api.py ! data()] " + str(strError))
+        DBOperations.registrarAccion(AccionSistema.WARNING.name, "No se pudieron obtener registros de vista materializada. [api.py ! data()] " + str(strErr))
         return "No se pudieron obtener registros", 500
 
-    return dfRegistros
+        
+    return Response(dfRegistros.to_json(orient="records"), mimetype='application/json')
 
 if __name__ == "__main__":
     app.run()
