@@ -162,6 +162,28 @@ shinyServer(function(input, output, session) {
     return(g)
   })
   
+  output$records <- renderInfoBox({
+    # No renderiza valor si no hay datos
+    if(is.null(valores$dfRegistros))
+      return(NULL)
+    
+    infoBox(
+      "Registros", as.character(nrow(valores$dfRegistros)), icon = icon("list"),
+      color = "blue", fill = TRUE, width = 3
+    )
+  })
+  
+  output$lastupdate <- renderInfoBox({
+    # No renderiza valor si no hay datos
+    if(is.null(valores$dfRegistros))
+      return(NULL)
+    
+    infoBox(
+      "Fecha Actualizacion", as.character(max(valores$dfRegistros$fechacreacion)), icon = icon("calendar"),
+      color = "green", fill = TRUE, width = 3
+    )
+  })
+  
   # =================================================================
   # [Renderizado de texto]
   

@@ -27,6 +27,15 @@ ui <- dashboardPage(skin = "green",
     tabItems(
       
       tabItem(tabName = "dashboard", 
+              
+              fluidRow(width = 12, 
+                       infoBoxOutput("records", width = 3),
+                       infoBoxOutput("accuracy", width = 3),
+                       infoBoxOutput("lastupdate", width = 3),
+                       infoBoxOutput("xx", width = 3)
+                       ),
+              
+              
               fluidRow(width = 12,
                        
                        box(title = "Registros por mes", width = 6, align = "center",  solidHeader = TRUE, status = "primary",
