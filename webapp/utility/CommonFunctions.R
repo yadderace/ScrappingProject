@@ -14,6 +14,9 @@ fncObtenerRutaAccionAPI <- function(strAccion){
   else if(toupper(strAccion) == "SCRAPPING"){
     strUrlBase <- paste(strUrlBase, "/scrapping", sep = "")
   }
+  else if(toupper(strAccion) == "DATA"){
+    strUrlBase <- paste(strUrlBase, "/data", sep = "")
+  }
   else{
     strUrlBase <- NULL
   }

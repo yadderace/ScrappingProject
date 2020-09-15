@@ -22,8 +22,9 @@ shinyServer(function(input, output, session) {
     output$precio <- renderValueBox({valueBox("Q0.00", "Precio Sugerido", width = 2, icon = icon("credit-card"))})
     output$olxPrecio <- renderValueBox({valueBox("Q0.00", "Precio Olx", width = 3, icon = icon("credit-card"), color = "green")})
     output$predictionPrecio <- renderValueBox({valueBox("Q0.00", "Precio Sugerido", width = 3, icon = icon("credit-card"))})
+    
+    fncObtenerRegistros()
   }
-  fncInit()
   
   # [Fnc1]: Function para limpiar todos los marker y agregar uno al mapa.
   fncAgregarMarkMapa <- function(strNombreMapa, latitud, longitud){
@@ -34,6 +35,52 @@ shinyServer(function(input, output, session) {
       addMarkers(lng = longitud, lat = latitud)
     
   }
+  
+  
+  # [Fnc2]: Funcion que consulta los datos que son utilizados para generar las graficas de dashboard
+  fncObtenerRegistros <- function(){
+    
+    # Obteniendo direccion URL
+    urlApi <- fncObtenerRutaAccionAPI("DATA")
+    
+    # Generando parametros
+    params <- data.frame(fechaFinal = format(Sys.Date(), "%Y-%m-%d"), fechaInicial = format(Sys.Date() - 60, "%Y-%m-%d"))
+    
+    # Ejecucion de la peticion
+    res <- NULL
+    withProgress(message = 'Consultando datos', detail = 'Esto puede tomar un tiempo...',  {
+      # Ejecucion de peticion
+      res <- POST(urlApi, body = params, encode = "json", parse_to_json = TRUE)
+    })
+    
+    if(is.null(res))
+      return(NULL)
+    
+    # Se obtienen los resultados del JSON
+    jsonResp <- content(res, as = "parsed")
+    dfRegistros <- fncTransformarRegistros(jsonResp)
+    
+    isolate(
+      valores$dfRegistros <- dfRegistros
+    );
+    
+  }
+  
+  # [Fnc3]: Funcion que se encarga de transformar el resultado JSON en un dataframe
+  fncTransformarRegistros <- function(jsonRegistros){
+    dfRegistros <- NULL
+    
+    dfRegistros <- data.frame(do.call(rbind, lapply(jsonRegistros, rbind)))
+    
+    dfRegistros$fechacreacion <- as.POSIXct(as.numeric(dfRegistros$fechacreacion)/1000, origin="1970-01-01", tz = "UTC")
+    dfRegistros$fecharegistro <- as.POSIXct(as.numeric(dfRegistros$fecharegistro)/1000, origin="1970-01-01", tz = "UTC")
+    dfRegistros$validohasta <- as.POSIXct(as.numeric(dfRegistros$validohasta)/1000, origin="1970-01-01", tz = "UTC")
+    
+    
+    return(dfRegistros)
+  }
+  
+  fncInit()
   
   # =================================================================
   # [Renderizado mapas]
