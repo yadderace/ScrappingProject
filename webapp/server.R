@@ -23,9 +23,9 @@ shinyServer(function(input, output, session) {
   # [Fnc0]: Funcion para inicializar valores y renderizados
   fncInit <- function(){
     # Inicializadores de precio
-    output$precio <- renderValueBox({valueBox("Q0.00", "Precio Sugerido", width = 2, icon = icon("credit-card"))})
+    output$precio <- renderValueBox({valueBox("Q0.00", "Precio Razonable", width = 2, icon = icon("credit-card"))})
     output$olxPrecio <- renderValueBox({valueBox("Q0.00", "Precio Olx", width = 3, icon = icon("credit-card"), color = "green")})
-    output$predictionPrecio <- renderValueBox({valueBox("Q0.00", "Precio Sugerido", width = 3, icon = icon("credit-card"))})
+    output$predictionPrecio <- renderValueBox({valueBox("Q0.00", "Precio Razonable", width = 3, icon = icon("credit-card"))})
     
     fncObtenerRegistros()
     fncObtenerInfoModelo()
@@ -156,7 +156,7 @@ shinyServer(function(input, output, session) {
     g <- ggplot(registros) + 
       aes(x = floor_date(fechacreacion, "month")) + 
       xlab("Mes") +
-      ylab("Cantdad Registros") +
+      ylab("Cantidad Registros") +
       geom_bar(fill = "steelblue") +
       theme_bw()
     
@@ -207,7 +207,7 @@ shinyServer(function(input, output, session) {
       return(NULL)
     
     infoBox(
-      "Fecha Actualizacion", as.character(max(valores$dfRegistros$fechacreacion)), icon = icon("calendar"),
+      "FECHA ACTUALIZACIÓN", as.character(max(valores$dfRegistros$fechacreacion)), icon = icon("calendar"),
       color = "blue", fill = TRUE, width = 3
     )
   })
@@ -354,7 +354,7 @@ shinyServer(function(input, output, session) {
       strSimbolo <- "US$"
     }
     strPrecio <- paste(strSimbolo, formatC(precio, format = "d", big.mark = ","), sep = "")
-    output$precio <- renderValueBox({valueBox(strPrecio, "Precio Sugerido", width = 2, icon = icon("credit-card"))})
+    output$precio <- renderValueBox({valueBox(strPrecio, "Precio Razonable", width = 2, icon = icon("credit-card"))})
     
   })
   
@@ -490,7 +490,7 @@ shinyServer(function(input, output, session) {
       strSimbolo <- "US$"
     }
     strPrecioOlx <- paste(strSimbolo, formatC(precio, format = "d", big.mark = ","), sep = "")
-    output$predictionPrecio <- renderValueBox({valueBox(strPrecioOlx, "Precio Sugerido", width = 2, icon = icon("credit-card"))})
+    output$predictionPrecio <- renderValueBox({valueBox(strPrecioOlx, "Precio Razonable", width = 2, icon = icon("credit-card"))})
     
     
   })

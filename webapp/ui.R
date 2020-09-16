@@ -17,8 +17,8 @@ ui <- dashboardPage(skin = "green",
   dashboardSidebar(
     sidebarMenu(
       menuItem("Dashboard", tabName = "dashboard", icon = icon("tachometer-alt")),
-      menuItem("Prediccion Precio", tabName = "prediccion_precio", icon = icon("calculator")),
-      menuItem("Comparacion OLX", tabName = "comparacion_olx", icon=icon("search")),
+      menuItem("Predicción Precio", tabName = "prediccion_precio", icon = icon("calculator")),
+      menuItem("Comparación OLX", tabName = "comparacion_olx", icon=icon("search")),
       menuItem("Configuraciones", tabName = "configuraciones", icon = icon("user-cog"))
     )
   ),
@@ -51,11 +51,11 @@ ui <- dashboardPage(skin = "green",
       tabItem(tabName = "prediccion_precio",
               fluidRow(width = 12, align = "center",
                 column(12, align = "center",
-                       box(title = "Caractersiticas", width = 12, align = "center",  solidHeader = TRUE, status = "primary", 
+                       box(title = "Características", width = 12, align = "center",  solidHeader = TRUE, status = "primary", 
                            
                            
                            column(4, align = "left", 
-                                  numericInput("espacio_m2", h3("Area (metros cuadrados)"), value = 25, min = 0),
+                                  numericInput("espacio_m2", h3("Área (metros cuadrados)"), value = 25, min = 0),
                                   radioButtons("moneda", h3("Moneda Venta"), choices = list("Dolar" = 1, "Quetzales" = 2), selected = 1)),
                            
                            column(4, align = "left", 
@@ -73,7 +73,7 @@ ui <- dashboardPage(skin = "green",
               ),
               
               fluidRow(
-                box(title = "Ubicacion", width = 6, align = "center",  solidHeader = TRUE, status = "primary",
+                box(title = "Ubicación", width = 6, align = "center",  solidHeader = TRUE, status = "primary",
                     leafletOutput("predictionMap")
                 ),
                 
@@ -98,12 +98,12 @@ ui <- dashboardPage(skin = "green",
               useShinyjs(),
               fluidRow(
                 
-                box(title = "Caracteristicas", width = 12, solidHeader = TRUE, status = "primary", 
+                box(title = "Características", width = 12, solidHeader = TRUE, status = "primary", 
                      
                     
                     fluidRow(width = 12, 
                              
-                             column(8, textInput("urlApartamento", h3("Direccion URL (OLX)"), value = "")),
+                             column(8, textInput("urlApartamento", h3("Dirección URL (OLX)"), value = "")),
                              
                              column(4, align = "center", 
                                     actionBttn( inputId = "btnScrapping",
@@ -116,7 +116,7 @@ ui <- dashboardPage(skin = "green",
                     fluidRow(width = 12,
                              
                              disabled(column(4, 
-                                    numericInput("olxEspacio", h3("Area (metros cuadrados)"), value = 25, min = 0),
+                                    numericInput("olxEspacio", h3("Área (metros cuadrados)"), value = 25, min = 0),
                                     radioButtons("olxMoneda", h3("Moneda"), choices = list("Dolar" = 1, "Quetzales" = 2), selected = 1)),
                              
                              column(4, 
@@ -131,7 +131,7 @@ ui <- dashboardPage(skin = "green",
               
               
               fluidRow(width = 12, 
-                       box(title = "Ubicacion", width = 6, align = "center",  solidHeader = TRUE, status = "primary",
+                       box(title = "Ubicación", width = 6, align = "center",  solidHeader = TRUE, status = "primary",
                            disabled(leafletOutput("olxMap"))),
                        
                        box(title = "Resultados", width = 6, align = "center",  solidHeader = TRUE, status = "primary",
