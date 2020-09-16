@@ -17,7 +17,9 @@ fncObtenerRutaAccionAPI <- function(strAccion){
   else if(toupper(strAccion) == "DATA"){
     strUrlBase <- paste(strUrlBase, "/data", sep = "")
   }
-  else{
+  else if(toupper(strAccion) == "MODEL_INFO"){
+    strUrlBase <- paste(strUrlBase, "/model_info", sep = "")
+  }else{
     strUrlBase <- NULL
   }
   

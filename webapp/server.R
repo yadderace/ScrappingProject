@@ -28,6 +28,7 @@ shinyServer(function(input, output, session) {
     output$predictionPrecio <- renderValueBox({valueBox("Q0.00", "Precio Sugerido", width = 3, icon = icon("credit-card"))})
     
     fncObtenerRegistros()
+    fncObtenerInfoModelo()
   }
   
   # [Fnc1]: Function para limpiar todos los marker y agregar uno al mapa.
@@ -72,6 +73,7 @@ shinyServer(function(input, output, session) {
   
   # [Fnc3]: Funcion que se encarga de transformar el resultado JSON en un dataframe
   fncTransformarRegistros <- function(jsonRegistros){
+    
     dfRegistros <- NULL
     
     dfRegistros <- data.frame(do.call(rbind, lapply(jsonRegistros, rbind)))
@@ -84,6 +86,30 @@ shinyServer(function(input, output, session) {
     return(dfRegistros)
   }
   
+  # [Fnc4]: Funcion que se encarga de consultar la info de modelo
+  fncObtenerInfoModelo <- function(){
+    
+    # Obteniendo direccion URL
+    urlApi <- fncObtenerRutaAccionAPI("MODEL_INFO")
+    
+    # Ejecucion de la peticion
+    res <- NULL
+    withProgress(message = 'Consultando datos', detail = 'Esto puede tomar un tiempo...',  {
+      # Ejecucion de peticion
+      res <- POST(urlApi, encode = "json", parse_to_json = TRUE)
+    })
+    
+    if(is.null(res))
+      return(NULL)
+    
+    # Se obtienen los resultados del JSON
+    jsonResp <- content(res, as = "parsed")
+    
+    dfInfoModelo <- data.frame(do.call(rbind, lapply(jsonResp, rbind)))
+    
+    isolate(valores$dfInfoModelo <- dfInfoModelo);
+    
+  }
   
   fncInit()
   
@@ -162,6 +188,7 @@ shinyServer(function(input, output, session) {
     return(g)
   })
   
+  
   output$records <- renderInfoBox({
     # No renderiza valor si no hay datos
     if(is.null(valores$dfRegistros))
@@ -173,6 +200,7 @@ shinyServer(function(input, output, session) {
     )
   })
   
+  
   output$lastupdate <- renderInfoBox({
     # No renderiza valor si no hay datos
     if(is.null(valores$dfRegistros))
@@ -180,9 +208,34 @@ shinyServer(function(input, output, session) {
     
     infoBox(
       "Fecha Actualizacion", as.character(max(valores$dfRegistros$fechacreacion)), icon = icon("calendar"),
-      color = "green", fill = TRUE, width = 3
+      color = "blue", fill = TRUE, width = 3
     )
   })
+  
+  
+  output$accuracy <- renderInfoBox({
+    # No renderiza valor si no hay datos
+    if(is.null(valores$dfInfoModelo))
+      return(NULL)
+    
+    infoBox("R2", 
+            paste(as.character(round(as.numeric(valores$dfInfoModelo$r2score[1]) * 100,2)), 
+                               "% (", valores$dfInfoModelo$tipomodelo, ")", sep = ""), icon = icon("ruler"),
+      color = "navy", fill = TRUE, width = 3
+    )
+  })
+  
+  output$predictions <- renderInfoBox({
+    # No renderiza valor si no hay datos
+    if(is.null(valores$dfInfoModelo))
+      return(NULL)
+    
+    infoBox("Predicciones", valores$dfInfoModelo$predicciones[1], icon = icon("thumbs-up"),
+            color = "navy", fill = TRUE, width = 3
+    )
+  })
+  
+  #red, yellow, aqua, blue, light-blue, green, navy, teal, olive, lime, orange, fuchsia, purple, maroon, black
   
   # =================================================================
   # [Renderizado de texto]

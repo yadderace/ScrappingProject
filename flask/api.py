@@ -200,10 +200,15 @@ class DBOperations():
 
             # Consulta a vista de datos limpios
             strQuery = '''
-                    select r2score, msescore, tipomodelo 
+                    select t1.*, t2.*
+                    from(
+                        select count(nombreaccion) predicciones from logaccionessistema
+                        where nombreaccion = 'PRICE_PREDICTION') AS t1
+                    cross join (
+                        select r2score, msescore, tipomodelo 
                         from modeloencabezado
-                    where active = true
-                    and tipomodelo in ('RF', 'LR') 
+                        where active = true
+                        and tipomodelo in ('RF', 'LR') ) AS t2
                 '''
     
             # Leyendo de base de datos especificando el query y los parametros de fecha.

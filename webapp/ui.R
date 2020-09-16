@@ -30,9 +30,9 @@ ui <- dashboardPage(skin = "green",
               
               fluidRow(width = 12, 
                        infoBoxOutput("records", width = 3),
-                       infoBoxOutput("accuracy", width = 3),
                        infoBoxOutput("lastupdate", width = 3),
-                       infoBoxOutput("xx", width = 3)
+                       infoBoxOutput("accuracy", width = 3),
+                       infoBoxOutput("predictions", width = 3)
                        ),
               
               
