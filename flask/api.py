@@ -490,16 +490,17 @@ def scrapping():
         DBOperations.registrarAccion(AccionSistema.WARNING.name, strError)
         return strError
     
-    # Conversion a JSON de los atributos
-    jsonAtributos = json.dumps(listaAtributos, default = lambda x: x.__dict__)
-    
 
-    DBOperations.registrarAccion(AccionSistema.SCRAPPING.name, jsonAtributos)
-    return app.response_class(
-        response = jsonAtributos,
-        status=200,
-        mimetype='application/json'
-    )
+    dfResultado = pd.DataFrame(columns = ['campo', 'valor'])
+    idx = 0
+
+    for atributo in listaAtributos:
+        dfResultado.loc[idx] = [atributo.campo, atributo.valor]
+        idx += 1
+
+    
+    DBOperations.registrarAccion(AccionSistema.SCRAPPING.name, "Scrapping por API realizado correctamente")
+    return Response(dfResultado.to_json(orient="records"), mimetype='application/json')
 
 @app.route('/data', methods = ['POST'])
 def data():
