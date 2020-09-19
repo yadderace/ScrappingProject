@@ -12,14 +12,14 @@ library(leaflet)
 library(shinyjs)
 
 ui <- dashboardPage(skin = "green",
-  dashboardHeader(title = "UVG"),
+  dashboardHeader(title = "Smart Dealing"),
   
   dashboardSidebar(
     sidebarMenu(
       menuItem("Dashboard", tabName = "dashboard", icon = icon("tachometer-alt")),
       menuItem("Predicción Precio", tabName = "prediccion_precio", icon = icon("calculator")),
-      menuItem("Comparación OLX", tabName = "comparacion_olx", icon=icon("search")),
-      menuItem("Configuraciones", tabName = "configuraciones", icon = icon("user-cog"))
+      menuItem("Comparación OLX", tabName = "comparacion_olx", icon=icon("search"))#,
+      #menuItem("Configuraciones", tabName = "configuraciones", icon = icon("user-cog"))
     )
   ),
   
@@ -27,6 +27,12 @@ ui <- dashboardPage(skin = "green",
     tabItems(
       
       tabItem(tabName = "dashboard", 
+              
+              fluidRow(width = 12, align = "center",
+                       box( width = 12, background = "light-blue",
+                         h1("Dashboard"),
+                         h3("Maximiza tu dinero en la adquisición de apartamentos")
+                       )),
               
               fluidRow(width = 12, 
                        infoBoxOutput("records", width = 3),
@@ -49,6 +55,12 @@ ui <- dashboardPage(skin = "green",
               )),
       
       tabItem(tabName = "prediccion_precio",
+              fluidRow(width = 12, align = "center",
+                       box( width = 12, background = "light-blue",
+                            h1("Predicción Precio"),
+                            h3("Precios Razonables de referencia para tu Inversión")
+                       )),
+              
               fluidRow(width = 12, align = "center",
                 column(12, align = "center",
                        box(title = "Características", width = 12, align = "center",  solidHeader = TRUE, status = "primary", 
@@ -96,6 +108,14 @@ ui <- dashboardPage(skin = "green",
       
       tabItem(tabName = "comparacion_olx",
               useShinyjs(),
+              
+              fluidRow(width = 12, align = "center",
+                       box( width = 12, background = "light-blue",
+                            h1("Comparación OLX"),
+                            h3("Identifica el Precio Razonable de tu Inmueble dentro del mercado inmobiliario en OLX Guatemala")
+                       )),
+              
+              
               fluidRow(
                 
                 box(title = "Características", width = 12, solidHeader = TRUE, status = "primary", 
